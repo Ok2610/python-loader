@@ -1,7 +1,8 @@
-implement requirements genereation
+refactor server & client to use pictures
 
-implement database linkeage --> postgres with container
+add and remove from database
 
-run all containers
+=> integrate api connection to client (flask ?)
+
 
 use flask ?

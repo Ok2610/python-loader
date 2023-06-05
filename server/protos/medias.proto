@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package media;
+
+// I don't care that media is already a latin plural, Oxford dictionnary has accepted the new "medias" plural form 
+service Medias {
+  // Sends a greeting
+  rpc GetMedias (GetMediasRequest) returns (stream MediaResponse) {}
+  rpc GetMediaById (GetMediaByIdRequest) returns (MediaResponse) {}
+  rpc AddMedia (AddMediaRequest) returns (AddMediaResponse) {}
+  rpc DeleteMedia (DeleteMediaRequest) returns (DeleteMediaResponse) {}
+}
+
+message Media {
+	int32 id = 1;
+	string file_uri = 2;
+	string file_type = 3;
+	string thumbnail_uri = 4;
+}
+message GetMediasRequest {}
+
+message MediaResponse {
+	Media media = 1;
+}
+message GetMediaByIdRequest {
+	string id = 1;
+}
+message AddMediaRequest {
+	Media media = 1;
+}
+message AddMediaResponse {
+	Media media = 1;
+}
+message DeleteMediaRequest {
+	string id = 1;
+}
+message DeleteMediaResponse {
+	Media media = 1;
+}
