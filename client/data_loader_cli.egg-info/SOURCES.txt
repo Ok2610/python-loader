@@ -1,0 +1,10 @@
+app.py
+medias_pb2.py
+medias_pb2_grpc.py
+setup.py
+data_loader_cli.egg-info/PKG-INFO
+data_loader_cli.egg-info/SOURCES.txt
+data_loader_cli.egg-info/dependency_links.txt
+data_loader_cli.egg-info/entry_points.txt
+data_loader_cli.egg-info/requires.txt
+data_loader_cli.egg-info/top_level.txt

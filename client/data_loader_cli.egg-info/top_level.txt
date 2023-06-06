@@ -1,0 +1,3 @@
+app
+medias_pb2
+medias_pb2_grpc

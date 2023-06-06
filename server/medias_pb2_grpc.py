@@ -25,7 +25,7 @@ class MediasStub(object):
                 request_serializer=medias__pb2.GetMediaByIdRequest.SerializeToString,
                 response_deserializer=medias__pb2.MediaResponse.FromString,
                 )
-        self.AddMedia = channel.unary_unary(
+        self.AddMedia = channel.stream_unary(
                 '/media.Medias/AddMedia',
                 request_serializer=medias__pb2.AddMediaRequest.SerializeToString,
                 response_deserializer=medias__pb2.AddMediaResponse.FromString,
@@ -54,7 +54,7 @@ class MediasServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def AddMedia(self, request, context):
+    def AddMedia(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -79,7 +79,7 @@ def add_MediasServicer_to_server(servicer, server):
                     request_deserializer=medias__pb2.GetMediaByIdRequest.FromString,
                     response_serializer=medias__pb2.MediaResponse.SerializeToString,
             ),
-            'AddMedia': grpc.unary_unary_rpc_method_handler(
+            'AddMedia': grpc.stream_unary_rpc_method_handler(
                     servicer.AddMedia,
                     request_deserializer=medias__pb2.AddMediaRequest.FromString,
                     response_serializer=medias__pb2.AddMediaResponse.SerializeToString,
@@ -135,7 +135,7 @@ class Medias(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def AddMedia(request,
+    def AddMedia(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -145,7 +145,7 @@ class Medias(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/media.Medias/AddMedia',
+        return grpc.experimental.stream_unary(request_iterator, target, '/media.Medias/AddMedia',
             medias__pb2.AddMediaRequest.SerializeToString,
             medias__pb2.AddMediaResponse.FromString,
             options, channel_credentials,

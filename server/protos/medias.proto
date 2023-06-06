@@ -7,14 +7,14 @@ service Medias {
   // Sends a greeting
   rpc GetMedias (GetMediasRequest) returns (stream MediaResponse) {}
   rpc GetMediaById (GetMediaByIdRequest) returns (MediaResponse) {}
-  rpc AddMedia (AddMediaRequest) returns (AddMediaResponse) {}
+  rpc AddMedia (stream AddMediaRequest) returns (AddMediaResponse) {}
   rpc DeleteMedia (DeleteMediaRequest) returns (DeleteMediaResponse) {}
 }
 
 message Media {
 	int32 id = 1;
 	string file_uri = 2;
-	string file_type = 3;
+	int32 file_type = 3;
 	string thumbnail_uri = 4;
 }
 message GetMediasRequest {}
@@ -23,16 +23,17 @@ message MediaResponse {
 	Media media = 1;
 }
 message GetMediaByIdRequest {
-	string id = 1;
+	int32 id = 1;
 }
 message AddMediaRequest {
 	Media media = 1;
 }
 message AddMediaResponse {
-	Media media = 1;
+	string message = 1;
+	int32 count = 2;
 }
 message DeleteMediaRequest {
-	string id = 1;
+	int32 id = 1;
 }
 message DeleteMediaResponse {
 	Media media = 1;

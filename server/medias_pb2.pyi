@@ -11,16 +11,18 @@ class AddMediaRequest(_message.Message):
     def __init__(self, media: _Optional[_Union[Media, _Mapping]] = ...) -> None: ...
 
 class AddMediaResponse(_message.Message):
-    __slots__ = ["media"]
-    MEDIA_FIELD_NUMBER: _ClassVar[int]
-    media: Media
-    def __init__(self, media: _Optional[_Union[Media, _Mapping]] = ...) -> None: ...
+    __slots__ = ["count", "message"]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    count: int
+    message: str
+    def __init__(self, message: _Optional[str] = ..., count: _Optional[int] = ...) -> None: ...
 
 class DeleteMediaRequest(_message.Message):
     __slots__ = ["id"]
     ID_FIELD_NUMBER: _ClassVar[int]
-    id: str
-    def __init__(self, id: _Optional[str] = ...) -> None: ...
+    id: int
+    def __init__(self, id: _Optional[int] = ...) -> None: ...
 
 class DeleteMediaResponse(_message.Message):
     __slots__ = ["media"]
@@ -31,8 +33,8 @@ class DeleteMediaResponse(_message.Message):
 class GetMediaByIdRequest(_message.Message):
     __slots__ = ["id"]
     ID_FIELD_NUMBER: _ClassVar[int]
-    id: str
-    def __init__(self, id: _Optional[str] = ...) -> None: ...
+    id: int
+    def __init__(self, id: _Optional[int] = ...) -> None: ...
 
 class GetMediasRequest(_message.Message):
     __slots__ = []
@@ -44,11 +46,11 @@ class Media(_message.Message):
     FILE_URI_FIELD_NUMBER: _ClassVar[int]
     ID_FIELD_NUMBER: _ClassVar[int]
     THUMBNAIL_URI_FIELD_NUMBER: _ClassVar[int]
-    file_type: str
+    file_type: int
     file_uri: str
     id: int
     thumbnail_uri: str
-    def __init__(self, id: _Optional[int] = ..., file_uri: _Optional[str] = ..., file_type: _Optional[str] = ..., thumbnail_uri: _Optional[str] = ...) -> None: ...
+    def __init__(self, id: _Optional[int] = ..., file_uri: _Optional[str] = ..., file_type: _Optional[int] = ..., thumbnail_uri: _Optional[str] = ...) -> None: ...
 
 class MediaResponse(_message.Message):
     __slots__ = ["media"]

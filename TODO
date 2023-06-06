@@ -1,8 +1,0 @@
-refactor server & client to use pictures
-
-add and remove from database
-
-=> integrate api connection to client (flask ?)
-
-
-use flask ?
