@@ -14,3 +14,7 @@ source .venv/Scripts/activate
 python3 -m grpc_tools.protoc -I./protos --python_out=. --pyi_out=. --grpc_python_out=. ./protos/medias.proto
 
 Then copy pb files to client side
+
+
+// TO RUN CLI WITH AUTO UPDATE 
+pip install --editable .

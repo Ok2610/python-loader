@@ -15,9 +15,9 @@ class MediasStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.GetMedias = channel.unary_stream(
-                '/media.Medias/GetMedias',
-                request_serializer=medias__pb2.GetMediasRequest.SerializeToString,
+        self.GetAllMedias = channel.unary_stream(
+                '/media.Medias/GetAllMedias',
+                request_serializer=medias__pb2.GetAllMediasRequest.SerializeToString,
                 response_deserializer=medias__pb2.MediaResponse.FromString,
                 )
         self.GetMediaById = channel.unary_unary(
@@ -25,7 +25,7 @@ class MediasStub(object):
                 request_serializer=medias__pb2.GetMediaByIdRequest.SerializeToString,
                 response_deserializer=medias__pb2.MediaResponse.FromString,
                 )
-        self.AddMedia = channel.stream_unary(
+        self.AddMedia = channel.stream_stream(
                 '/media.Medias/AddMedia',
                 request_serializer=medias__pb2.AddMediaRequest.SerializeToString,
                 response_deserializer=medias__pb2.AddMediaResponse.FromString,
@@ -41,7 +41,7 @@ class MediasServicer(object):
     """I don't care that media is already a latin plural, Oxford dictionnary has accepted the new "medias" plural form 
     """
 
-    def GetMedias(self, request, context):
+    def GetAllMedias(self, request, context):
         """Sends a greeting
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -69,9 +69,9 @@ class MediasServicer(object):
 
 def add_MediasServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'GetMedias': grpc.unary_stream_rpc_method_handler(
-                    servicer.GetMedias,
-                    request_deserializer=medias__pb2.GetMediasRequest.FromString,
+            'GetAllMedias': grpc.unary_stream_rpc_method_handler(
+                    servicer.GetAllMedias,
+                    request_deserializer=medias__pb2.GetAllMediasRequest.FromString,
                     response_serializer=medias__pb2.MediaResponse.SerializeToString,
             ),
             'GetMediaById': grpc.unary_unary_rpc_method_handler(
@@ -79,7 +79,7 @@ def add_MediasServicer_to_server(servicer, server):
                     request_deserializer=medias__pb2.GetMediaByIdRequest.FromString,
                     response_serializer=medias__pb2.MediaResponse.SerializeToString,
             ),
-            'AddMedia': grpc.stream_unary_rpc_method_handler(
+            'AddMedia': grpc.stream_stream_rpc_method_handler(
                     servicer.AddMedia,
                     request_deserializer=medias__pb2.AddMediaRequest.FromString,
                     response_serializer=medias__pb2.AddMediaResponse.SerializeToString,
@@ -101,7 +101,7 @@ class Medias(object):
     """
 
     @staticmethod
-    def GetMedias(request,
+    def GetAllMedias(request,
             target,
             options=(),
             channel_credentials=None,
@@ -111,8 +111,8 @@ class Medias(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/media.Medias/GetMedias',
-            medias__pb2.GetMediasRequest.SerializeToString,
+        return grpc.experimental.unary_stream(request, target, '/media.Medias/GetAllMedias',
+            medias__pb2.GetAllMediasRequest.SerializeToString,
             medias__pb2.MediaResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -145,7 +145,7 @@ class Medias(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/media.Medias/AddMedia',
+        return grpc.experimental.stream_stream(request_iterator, target, '/media.Medias/AddMedia',
             medias__pb2.AddMediaRequest.SerializeToString,
             medias__pb2.AddMediaResponse.FromString,
             options, channel_credentials,

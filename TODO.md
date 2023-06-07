@@ -1,14 +1,25 @@
+**General**
+[] Check what the actual sql scripts are doing
+[] Implement all tables generation
+[] 
+
+
 **GET**
-handle input errors
+[x] handle input errors
 
 **GETALL**
-implement cli command
+[x] implement cli command
 
 **ADD**
-implement cli command with _path to directory_
-implement double streaming behaviour for loading batches of elements --> loading progress
+[x] implement cli command with _path to directory_
+[x] implement double streaming behaviour for loading batches of elements --> loading progress
+[]	implement single file add
+[]	implement linked tables filling
 
-**REMOVE**
-implement server/client fucntions with double streaming behaviour for loading batches of elements --> loading progress
-implement cli command
+**REMOVE**    // is it really useful ?
+[] implement server/client functions with double streaming behaviour for loading batches of elements --> loading progress
+[] implement cli command
 
+**RESET**
+[] RPC call to reset DB, i.e. run the init script ?
+[] CLI command to do so
