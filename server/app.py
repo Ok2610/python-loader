@@ -42,7 +42,7 @@ class Medias(MediasServicer):
     ):
         print("Received GetMedia request with id: %d" % request.id)
         try:
-            sql = """SELECT * FROM cubeobjects WHERE id=%d""" % request.id
+            sql = """SELECT * FROM public.cubeobjects WHERE id=%d""" % request.id
             self.cursor.execute(sql)
             result = self.cursor.fetchall()[0]
             print("  -> Element fetched from DB, sending back to client...")
@@ -60,11 +60,11 @@ class Medias(MediasServicer):
             return medias_pb2.MediaResponse(success=False)
 
     def GetAllMedias(
-        self, request: medias_pb2.GetAllMediasRequest, context: grpc.ServicerContext
+        self, request: medias_pb2.EmptyRequest, context: grpc.ServicerContext
     ):
         print("Received get_all_medias request")
         count = 0
-        sql = """SELECT * FROM cubeobjects"""
+        sql = """SELECT * FROM public.cubeobjects"""
         self.cursor.execute(sql)
         for row in self.cursor:
             count += 1
@@ -77,7 +77,26 @@ class Medias(MediasServicer):
                     "thumbnail_uri": row["thumbnail_uri"],
                 },
             )
-        print("Fetched %d items from database" % count)
+        print("  -> Fetched %d items from database" % count)
+    
+    
+    def GetMediaIdFromURI (self, request: medias_pb2.GetMediaIdFromURIRequest, 
+                           context: grpc.ServicerContext):
+        print("Received GetMediaIdFromURI request with URI: %s" % request.uri)
+        try:
+            sql = """SELECT id FROM public.cubeobjects WHERE file_uri='%s'""" % request.uri
+            print(sql)
+            self.cursor.execute(sql)
+            result = self.cursor.fetchall()[0]
+            print("  -> Element fetched from DB, sending back ID to client...")
+            return medias_pb2.GetMediaIdFromURIResponse(
+                success=True,
+                id=result[0]
+            )
+        except:
+            print("  -> No results were fetched, sending error message to client...")
+            return medias_pb2.GetMediaIdFromURIResponse(success=False)
+            
 
     def AddMedia(self, request_iterator, context: grpc.ServicerContext):
         print("AddMedia service called by client...")
@@ -86,7 +105,7 @@ class Medias(MediasServicer):
         for request in request_iterator:
             request_counter += 1
             if request_counter % PACKET_SIZE == 1:
-                sql = """INSERT INTO cubeobjects (file_uri, file_type, thumbnail_uri)
+                sql = """INSERT INTO public.cubeobjects (file_uri, file_type, thumbnail_uri)
 VALUES
 """
             sql += "('%s', %d, '%s')," % (
@@ -99,11 +118,11 @@ VALUES
                 try:
                     self.cursor.execute(sql)
                     response = medias_pb2.AddMediaResponse(
-                        message="Processing", count=request_counter
+                        success=True, count=request_counter
                     )
                 except:
-                    response = medias_pb2.AddMediaResponse(message="Error", count=0)
-                    print("Error: packet addition failed.")
+                    response = medias_pb2.AddMediaResponse(success=False)
+                    print("  -> Error: packet addition failed.")
                 yield response
 
         if request_counter % PACKET_SIZE > 0:
@@ -111,13 +130,40 @@ VALUES
             try:
                 self.cursor.execute(sql)
                 response = medias_pb2.AddMediaResponse(
-                    message="Processing", count=request_counter
+                    success=True, count=request_counter
                 )
             except:
-                response = medias_pb2.AddMediaResponse(message="Error", count=0)
+                response = medias_pb2.AddMediaResponse(success=False)
                 print("Error: packet addition failed.")
             yield response
-        print("Operation completed, added %d elements to DB" % request_counter)
+        print("  -> Operation completed, added %d elements to DB" % request_counter)
+
+    def DeleteMedia(
+        self, request: medias_pb2.DeleteMediaRequest, context: grpc.ServicerContext
+    ):
+        print("Received DeleteMedia request with id: %d" % request.id)
+        try:
+            sql = """DELETE FROM public.cubeobjects WHERE id=%d;""" % request.id
+            self.cursor.execute(sql)
+            if self.cursor.rowcount > 0:
+              self.conn.commit()
+              print("  -> SUCCESS: Element deleted from DB.")
+              return medias_pb2.StatusResponse(success=True)
+            else:
+                raise Exception("Element not found")
+        except Exception as e:
+            print("  -> ERROR: ", str(e))
+            return medias_pb2.StatusResponse(success=False)
+        
+    def ResetDatabase(self, request, context):
+        print("Received ResetDatabase request.")
+        try:
+          self.cursor.execute(open("init.sql", "r").read())
+          print("  -> SUCCESS: DB has been reset")
+          return medias_pb2.StatusResponse(success=True)
+        except:
+          print('  -> ERROR: Failed to reset DB')
+          return medias_pb2.StatusResponse(success=False)
 
 
 def serve() -> None:

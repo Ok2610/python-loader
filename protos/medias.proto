@@ -5,10 +5,12 @@ package media;
 // I don't care that media is already a latin plural, Oxford dictionnary has accepted the new "medias" plural form 
 service Medias {
   // Sends a greeting
-  rpc GetAllMedias (GetAllMediasRequest) returns (stream MediaResponse) {}
+  rpc GetAllMedias (EmptyRequest) returns (stream MediaResponse) {}
   rpc GetMediaById (GetMediaByIdRequest) returns (MediaResponse) {}
+	rpc GetMediaIdFromURI (GetMediaIdFromURIRequest) returns (GetMediaIdFromURIResponse) {}
   rpc AddMedia (stream AddMediaRequest) returns (stream AddMediaResponse) {}
-  rpc DeleteMedia (DeleteMediaRequest) returns (DeleteMediaResponse) {}
+  rpc DeleteMedia (DeleteMediaRequest) returns (StatusResponse) {}
+	rpc ResetDatabase (EmptyRequest) returns (StatusResponse) {}
 }
 
 message Media {
@@ -17,7 +19,7 @@ message Media {
 	int32 file_type = 3;
 	string thumbnail_uri = 4;
 }
-message GetAllMediasRequest {}
+message EmptyRequest {}
 
 message MediaResponse {
 	bool success = 1;
@@ -26,16 +28,26 @@ message MediaResponse {
 message GetMediaByIdRequest {
 	int32 id = 1;
 }
+
+message GetMediaIdFromURIRequest {
+	string uri = 1;
+}
+
+message GetMediaIdFromURIResponse {
+	bool success = 1;
+	int32 id = 2;
+}
+
 message AddMediaRequest {
 	Media media = 1;
 }
 message AddMediaResponse {
-	string message = 1;
+	bool success = 1;
 	int32 count = 2;
 }
 message DeleteMediaRequest {
 	int32 id = 1;
 }
-message DeleteMediaResponse {
-	Media media = 1;
+message StatusResponse {
+	bool success = 1;
 }

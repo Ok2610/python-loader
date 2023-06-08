@@ -11,12 +11,12 @@ class AddMediaRequest(_message.Message):
     def __init__(self, media: _Optional[_Union[Media, _Mapping]] = ...) -> None: ...
 
 class AddMediaResponse(_message.Message):
-    __slots__ = ["count", "message"]
+    __slots__ = ["count", "success"]
     COUNT_FIELD_NUMBER: _ClassVar[int]
-    MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
     count: int
-    message: str
-    def __init__(self, message: _Optional[str] = ..., count: _Optional[int] = ...) -> None: ...
+    success: bool
+    def __init__(self, success: bool = ..., count: _Optional[int] = ...) -> None: ...
 
 class DeleteMediaRequest(_message.Message):
     __slots__ = ["id"]
@@ -24,13 +24,7 @@ class DeleteMediaRequest(_message.Message):
     id: int
     def __init__(self, id: _Optional[int] = ...) -> None: ...
 
-class DeleteMediaResponse(_message.Message):
-    __slots__ = ["media"]
-    MEDIA_FIELD_NUMBER: _ClassVar[int]
-    media: Media
-    def __init__(self, media: _Optional[_Union[Media, _Mapping]] = ...) -> None: ...
-
-class GetAllMediasRequest(_message.Message):
+class EmptyRequest(_message.Message):
     __slots__ = []
     def __init__(self) -> None: ...
 
@@ -39,6 +33,20 @@ class GetMediaByIdRequest(_message.Message):
     ID_FIELD_NUMBER: _ClassVar[int]
     id: int
     def __init__(self, id: _Optional[int] = ...) -> None: ...
+
+class GetMediaIdFromURIRequest(_message.Message):
+    __slots__ = ["uri"]
+    URI_FIELD_NUMBER: _ClassVar[int]
+    uri: str
+    def __init__(self, uri: _Optional[str] = ...) -> None: ...
+
+class GetMediaIdFromURIResponse(_message.Message):
+    __slots__ = ["id", "success"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    success: bool
+    def __init__(self, success: bool = ..., id: _Optional[int] = ...) -> None: ...
 
 class Media(_message.Message):
     __slots__ = ["file_type", "file_uri", "id", "thumbnail_uri"]
@@ -59,3 +67,9 @@ class MediaResponse(_message.Message):
     media: Media
     success: bool
     def __init__(self, success: bool = ..., media: _Optional[_Union[Media, _Mapping]] = ...) -> None: ...
+
+class StatusResponse(_message.Message):
+    __slots__ = ["success"]
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    success: bool
+    def __init__(self, success: bool = ...) -> None: ...

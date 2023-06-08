@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cmedias.proto\x12\x05media\"O\n\x05Media\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x10\n\x08\x66ile_uri\x18\x02 \x01(\t\x12\x11\n\tfile_type\x18\x03 \x01(\x05\x12\x15\n\rthumbnail_uri\x18\x04 \x01(\t\"\x15\n\x13GetAllMediasRequest\"=\n\rMediaResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x1b\n\x05media\x18\x02 \x01(\x0b\x32\x0c.media.Media\"!\n\x13GetMediaByIdRequest\x12\n\n\x02id\x18\x01 \x01(\x05\".\n\x0f\x41\x64\x64MediaRequest\x12\x1b\n\x05media\x18\x01 \x01(\x0b\x32\x0c.media.Media\"2\n\x10\x41\x64\x64MediaResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\" \n\x12\x44\x65leteMediaRequest\x12\n\n\x02id\x18\x01 \x01(\x05\"2\n\x13\x44\x65leteMediaResponse\x12\x1b\n\x05media\x18\x01 \x01(\x0b\x32\x0c.media.Media2\x9d\x02\n\x06Medias\x12\x44\n\x0cGetAllMedias\x12\x1a.media.GetAllMediasRequest\x1a\x14.media.MediaResponse\"\x00\x30\x01\x12\x42\n\x0cGetMediaById\x12\x1a.media.GetMediaByIdRequest\x1a\x14.media.MediaResponse\"\x00\x12\x41\n\x08\x41\x64\x64Media\x12\x16.media.AddMediaRequest\x1a\x17.media.AddMediaResponse\"\x00(\x01\x30\x01\x12\x46\n\x0b\x44\x65leteMedia\x12\x19.media.DeleteMediaRequest\x1a\x1a.media.DeleteMediaResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cmedias.proto\x12\x05media\"O\n\x05Media\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x10\n\x08\x66ile_uri\x18\x02 \x01(\t\x12\x11\n\tfile_type\x18\x03 \x01(\x05\x12\x15\n\rthumbnail_uri\x18\x04 \x01(\t\"\x0e\n\x0c\x45mptyRequest\"=\n\rMediaResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x1b\n\x05media\x18\x02 \x01(\x0b\x32\x0c.media.Media\"!\n\x13GetMediaByIdRequest\x12\n\n\x02id\x18\x01 \x01(\x05\"\'\n\x18GetMediaIdFromURIRequest\x12\x0b\n\x03uri\x18\x01 \x01(\t\"8\n\x19GetMediaIdFromURIResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\n\n\x02id\x18\x02 \x01(\x05\".\n\x0f\x41\x64\x64MediaRequest\x12\x1b\n\x05media\x18\x01 \x01(\x0b\x32\x0c.media.Media\"2\n\x10\x41\x64\x64MediaResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\" \n\x12\x44\x65leteMediaRequest\x12\n\n\x02id\x18\x01 \x01(\x05\"!\n\x0eStatusResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x32\xaa\x03\n\x06Medias\x12=\n\x0cGetAllMedias\x12\x13.media.EmptyRequest\x1a\x14.media.MediaResponse\"\x00\x30\x01\x12\x42\n\x0cGetMediaById\x12\x1a.media.GetMediaByIdRequest\x1a\x14.media.MediaResponse\"\x00\x12X\n\x11GetMediaIdFromURI\x12\x1f.media.GetMediaIdFromURIRequest\x1a .media.GetMediaIdFromURIResponse\"\x00\x12\x41\n\x08\x41\x64\x64Media\x12\x16.media.AddMediaRequest\x1a\x17.media.AddMediaResponse\"\x00(\x01\x30\x01\x12\x41\n\x0b\x44\x65leteMedia\x12\x19.media.DeleteMediaRequest\x1a\x15.media.StatusResponse\"\x00\x12=\n\rResetDatabase\x12\x13.media.EmptyRequest\x1a\x15.media.StatusResponse\"\x00\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'medias_pb2', globals())
@@ -22,20 +22,24 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _MEDIA._serialized_start=23
   _MEDIA._serialized_end=102
-  _GETALLMEDIASREQUEST._serialized_start=104
-  _GETALLMEDIASREQUEST._serialized_end=125
-  _MEDIARESPONSE._serialized_start=127
-  _MEDIARESPONSE._serialized_end=188
-  _GETMEDIABYIDREQUEST._serialized_start=190
-  _GETMEDIABYIDREQUEST._serialized_end=223
-  _ADDMEDIAREQUEST._serialized_start=225
-  _ADDMEDIAREQUEST._serialized_end=271
-  _ADDMEDIARESPONSE._serialized_start=273
-  _ADDMEDIARESPONSE._serialized_end=323
-  _DELETEMEDIAREQUEST._serialized_start=325
-  _DELETEMEDIAREQUEST._serialized_end=357
-  _DELETEMEDIARESPONSE._serialized_start=359
-  _DELETEMEDIARESPONSE._serialized_end=409
-  _MEDIAS._serialized_start=412
-  _MEDIAS._serialized_end=697
+  _EMPTYREQUEST._serialized_start=104
+  _EMPTYREQUEST._serialized_end=118
+  _MEDIARESPONSE._serialized_start=120
+  _MEDIARESPONSE._serialized_end=181
+  _GETMEDIABYIDREQUEST._serialized_start=183
+  _GETMEDIABYIDREQUEST._serialized_end=216
+  _GETMEDIAIDFROMURIREQUEST._serialized_start=218
+  _GETMEDIAIDFROMURIREQUEST._serialized_end=257
+  _GETMEDIAIDFROMURIRESPONSE._serialized_start=259
+  _GETMEDIAIDFROMURIRESPONSE._serialized_end=315
+  _ADDMEDIAREQUEST._serialized_start=317
+  _ADDMEDIAREQUEST._serialized_end=363
+  _ADDMEDIARESPONSE._serialized_start=365
+  _ADDMEDIARESPONSE._serialized_end=415
+  _DELETEMEDIAREQUEST._serialized_start=417
+  _DELETEMEDIAREQUEST._serialized_end=449
+  _STATUSRESPONSE._serialized_start=451
+  _STATUSRESPONSE._serialized_end=484
+  _MEDIAS._serialized_start=487
+  _MEDIAS._serialized_end=913
 # @@protoc_insertion_point(module_scope)

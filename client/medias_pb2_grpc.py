@@ -17,13 +17,18 @@ class MediasStub(object):
         """
         self.GetAllMedias = channel.unary_stream(
                 '/media.Medias/GetAllMedias',
-                request_serializer=medias__pb2.GetAllMediasRequest.SerializeToString,
+                request_serializer=medias__pb2.EmptyRequest.SerializeToString,
                 response_deserializer=medias__pb2.MediaResponse.FromString,
                 )
         self.GetMediaById = channel.unary_unary(
                 '/media.Medias/GetMediaById',
                 request_serializer=medias__pb2.GetMediaByIdRequest.SerializeToString,
                 response_deserializer=medias__pb2.MediaResponse.FromString,
+                )
+        self.GetMediaIdFromURI = channel.unary_unary(
+                '/media.Medias/GetMediaIdFromURI',
+                request_serializer=medias__pb2.GetMediaIdFromURIRequest.SerializeToString,
+                response_deserializer=medias__pb2.GetMediaIdFromURIResponse.FromString,
                 )
         self.AddMedia = channel.stream_stream(
                 '/media.Medias/AddMedia',
@@ -33,7 +38,12 @@ class MediasStub(object):
         self.DeleteMedia = channel.unary_unary(
                 '/media.Medias/DeleteMedia',
                 request_serializer=medias__pb2.DeleteMediaRequest.SerializeToString,
-                response_deserializer=medias__pb2.DeleteMediaResponse.FromString,
+                response_deserializer=medias__pb2.StatusResponse.FromString,
+                )
+        self.ResetDatabase = channel.unary_unary(
+                '/media.Medias/ResetDatabase',
+                request_serializer=medias__pb2.EmptyRequest.SerializeToString,
+                response_deserializer=medias__pb2.StatusResponse.FromString,
                 )
 
 
@@ -54,6 +64,12 @@ class MediasServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetMediaIdFromURI(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def AddMedia(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -66,18 +82,29 @@ class MediasServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ResetDatabase(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MediasServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'GetAllMedias': grpc.unary_stream_rpc_method_handler(
                     servicer.GetAllMedias,
-                    request_deserializer=medias__pb2.GetAllMediasRequest.FromString,
+                    request_deserializer=medias__pb2.EmptyRequest.FromString,
                     response_serializer=medias__pb2.MediaResponse.SerializeToString,
             ),
             'GetMediaById': grpc.unary_unary_rpc_method_handler(
                     servicer.GetMediaById,
                     request_deserializer=medias__pb2.GetMediaByIdRequest.FromString,
                     response_serializer=medias__pb2.MediaResponse.SerializeToString,
+            ),
+            'GetMediaIdFromURI': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetMediaIdFromURI,
+                    request_deserializer=medias__pb2.GetMediaIdFromURIRequest.FromString,
+                    response_serializer=medias__pb2.GetMediaIdFromURIResponse.SerializeToString,
             ),
             'AddMedia': grpc.stream_stream_rpc_method_handler(
                     servicer.AddMedia,
@@ -87,7 +114,12 @@ def add_MediasServicer_to_server(servicer, server):
             'DeleteMedia': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteMedia,
                     request_deserializer=medias__pb2.DeleteMediaRequest.FromString,
-                    response_serializer=medias__pb2.DeleteMediaResponse.SerializeToString,
+                    response_serializer=medias__pb2.StatusResponse.SerializeToString,
+            ),
+            'ResetDatabase': grpc.unary_unary_rpc_method_handler(
+                    servicer.ResetDatabase,
+                    request_deserializer=medias__pb2.EmptyRequest.FromString,
+                    response_serializer=medias__pb2.StatusResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -112,7 +144,7 @@ class Medias(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/media.Medias/GetAllMedias',
-            medias__pb2.GetAllMediasRequest.SerializeToString,
+            medias__pb2.EmptyRequest.SerializeToString,
             medias__pb2.MediaResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -131,6 +163,23 @@ class Medias(object):
         return grpc.experimental.unary_unary(request, target, '/media.Medias/GetMediaById',
             medias__pb2.GetMediaByIdRequest.SerializeToString,
             medias__pb2.MediaResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetMediaIdFromURI(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/media.Medias/GetMediaIdFromURI',
+            medias__pb2.GetMediaIdFromURIRequest.SerializeToString,
+            medias__pb2.GetMediaIdFromURIResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -164,6 +213,23 @@ class Medias(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/media.Medias/DeleteMedia',
             medias__pb2.DeleteMediaRequest.SerializeToString,
-            medias__pb2.DeleteMediaResponse.FromString,
+            medias__pb2.StatusResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ResetDatabase(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/media.Medias/ResetDatabase',
+            medias__pb2.EmptyRequest.SerializeToString,
+            medias__pb2.StatusResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
