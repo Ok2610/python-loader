@@ -1,0 +1,107 @@
+{
+	"tagsets":[
+		{
+			"name":"Location",
+			"type": 1
+		},
+		{
+			"name":"TimeStamp",
+			"type": 2
+		},
+		{
+			"name":"Time",
+			"type": 3
+		},
+		{
+			"name":"Date",
+			"type": 4
+		},
+		{
+			"name":"Resolution",
+			"type": 5
+		}
+	],
+	"medias":[
+		{
+			"path":"./lessfiles/background.jpg",
+			"tags":[
+				{
+					"tagset_id":1,
+					"value":"Paris"
+				},
+				{
+					"tagset_id":2,
+					"value":"1789-07-14 12:00:01"
+				},
+				{
+					"tagset_id":3,
+					"value":"12:00:01"
+				},
+				{
+					"tagset_id":4,
+					"value":"1789-07-14"
+				},
+				{
+					"tagset_id":5,
+					"value":"1080"
+				}
+			]
+		},
+		{
+			"path":"./lessfiles/boing.jpg",
+			"tags":[
+				{
+					"tagset_id":1,
+					"value":"Rome"
+				},
+				{
+					"tagset_id":2,
+					"value":"2022-01-17 12:00:01"
+				},
+				{
+					"tagset_id":3,
+					"value":"12:00:01"
+				},
+				{
+					"tagset_id":4,
+					"value":"2022-01-17"
+				}
+			]
+		},
+		{
+			"path":"./lessfiles/fontaines.png",
+			"tags":[
+				{
+					"tagset_id":1,
+					"value":"Paris"
+				},
+				{
+					"tagset_id":2,
+					"value":"2022-01-17 14:32:01"
+				},
+				{
+					"tagset_id":3,
+					"value":"14:32:01"
+				},
+				{
+					"tagset_id":4,
+					"value":"2022-01-17"
+				},
+				{
+					"tagset_id":5,
+					"value":"3640"
+				}
+			]
+		},
+		{
+			"path":"./lessfiles/Demo Track 2.mp3",
+			"tags":[
+				{
+					"tagset_id":5,
+					"value":"44100"
+				}
+			]
+		}
+		
+	]
+}

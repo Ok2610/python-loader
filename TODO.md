@@ -1,10 +1,25 @@
 **General**
-[] Check what the actual sql scripts are doing
-[] Implement all tables generation
+[~] Check what the actual sql scripts are doing
+[x] Implement all tables generation
 [] Generate tags from CSV
 [] Try to make your own csv as a user
 [x] Share proto files for client & server
 PLUGINS   how do you generate tags (as grpc clients) 
+
+[] Re-implement all CLI commands with class-based interactions*
+
+
+[x] Taggings: the method get_tagging(id, id) is irrelevent, we need a get_taggings(media_id) and a get_medias(tag_id)
+[x] Tags : implement a create-tag method
+
+
+[] Implement all new functions in server side
+[] Implement CLI commands to call said functions
+
+
+IMPORTANT
+[] 
+
 
 
 **GET**

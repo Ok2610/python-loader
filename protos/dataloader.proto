@@ -1,0 +1,195 @@
+syntax = "proto3";
+
+package dataloader;
+
+service DataLoader {
+  // Medias
+  rpc getMedias (EmptyRequest) returns (stream MediaResponse) {}
+  rpc getMediaById (GetMediaByIdRequest) returns (MediaResponse) {}
+	rpc getMediaIdFromURI (GetMediaIdFromURIRequest) returns (IdResponse) {}
+  rpc addMedia (AddMediaRequest) returns (MediaResponse) {}
+  rpc addMedias (stream AddMediaRequest) returns (stream AddMediaStreamResponse) {} 
+  rpc deleteMedia (DeleteMediaRequest) returns (StatusResponse) {}
+
+	// TagSets
+	rpc getTagSets(EmptyRequest) returns (stream TagSetResponse) {};
+	rpc getTagSetById(GetTagSetRequestById) returns (TagSetResponse) {};
+	rpc getTagSetByName(GetTagSetRequestByName) returns (TagSetResponse) {};
+	rpc createTagSet(CreateTagSetRequest) returns (TagSetResponse) {};
+
+	// Tags
+	rpc getTags(EmptyRequest) returns (stream TagResponse) {};
+	rpc getTag(GetTagRequest) returns (TagResponse) {};
+	rpc createOrGetTag(CreateTagRequest) returns (TagResponse) {};
+
+	// Tagging
+	rpc getTaggings(EmptyRequest) returns (stream TaggingResponse) {};
+	rpc createTagging(CreateTaggingRequest) returns (TaggingResponse) {};
+  rpc getMediasWithTag(GetMediasWithTagRequest) returns (stream IdResponse) {};
+  rpc getMediaTags(GetMediaTagsRequest) returns (stream IdResponse) {};
+
+	rpc resetDatabase (EmptyRequest) returns (StatusResponse) {}
+}
+
+// Misc
+message EmptyRequest {}
+
+message StatusResponse {
+	bool success = 1;
+}
+
+// Media / cubeobjects
+
+message Media {
+	int32 id = 1;
+	string file_uri = 2;
+	int32 file_type = 3;
+	string thumbnail_uri = 4;
+}
+
+message MediaResponse {
+	bool success = 1;
+	Media media = 2;
+}
+message GetMediaByIdRequest {
+	int32 id = 1;
+}
+
+message GetMediaIdFromURIRequest {
+	string uri = 1;
+}
+
+message IdResponse {
+	bool success = 1;
+	int32 id = 2;
+}
+
+message AddMediaRequest {
+	Media media = 1;
+}
+
+message AddMediaStreamResponse {    
+	bool success = 1;
+	int32 count = 2;
+}
+
+message DeleteMediaRequest {
+	int32 id = 1;
+}
+
+// TagSets
+
+message TagSet {
+  int32 id = 1;
+  string name = 2;
+  int32 tagTypeId = 3;
+}
+
+message GetTagSetRequestById {
+  int32 id = 1;
+}
+
+message GetTagSetRequestByName {
+  string name = 1;
+}
+
+message TagSetResponse {
+  bool success = 1;
+  TagSet tagset = 2;
+}
+
+message CreateTagSetRequest {
+  string name = 1;
+  int32 tagTypeId = 2;
+}
+
+
+// Tags
+
+message AlphanumericalValue {
+  string value = 1;
+}
+
+message NumericalValue {
+  int64 value = 1;
+}
+message DateValue {
+  // FORMAT: YYYY-MM-DD
+  string value = 1;
+}
+
+message TimeValue {
+  // FORMAT: hh:mm:ss
+  string value = 1;
+}
+
+message TimeStampValue {
+  // FORMAT: YYYY-MM-DD hh:mm:ss
+  string value = 1;
+}
+
+message Tag {
+	int64 id = 1;
+	int32 tagSetId = 2;
+	int32 tagTypeId = 3;
+	oneof value {
+    AlphanumericalValue alphanumerical = 4;
+    TimeStampValue timestamp = 5;
+    TimeValue time = 6;
+    DateValue date = 7;
+    NumericalValue numerical = 8;
+  }
+}
+
+message GetTagRequest {
+	int64 id = 1;
+}
+
+message TagResponse {
+  bool success = 1;
+	Tag tag = 2;
+}
+
+message CreateTagRequest {
+  int32 tagSetId = 2;
+	int32 tagTypeId = 3;
+	oneof value {
+    AlphanumericalValue alphanumerical = 4;
+    TimeStampValue timestamp = 5;
+    TimeValue time = 6;
+    DateValue date = 7;
+    NumericalValue numerical = 8;
+  }
+}
+
+
+
+// Tagging (mapped in table objecttagrelations)
+// Tagging
+
+message Tagging {
+  int64 mediaId = 1;
+  int64 tagId = 2;
+}
+
+message GetTaggingsRequest {
+  int64 tagId = 1;
+}
+
+message TaggingResponse {
+  bool success = 1;
+  Tagging tagging = 2;
+}
+
+message CreateTaggingRequest {
+  int64 mediaId = 1;
+  int64 tagId = 2;
+}
+
+message GetMediaTagsRequest {
+  int64 mediaId = 1;  
+}
+
+message GetMediasWithTagRequest {
+  int64 tagId = 1;  
+}

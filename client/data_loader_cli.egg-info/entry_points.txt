@@ -1,2 +1,2 @@
 [console_scripts]
-loader = app:cli
+loader = cli:cli
