@@ -5,45 +5,62 @@ package dataloader;
 service DataLoader {
   // Medias
   rpc getMedias (EmptyRequest) returns (stream MediaResponse) {}
-  rpc getMediaById (GetMediaByIdRequest) returns (MediaResponse) {}
+  rpc getMediaById (IdRequest) returns (MediaResponse) {}
 	rpc getMediaIdFromURI (GetMediaIdFromURIRequest) returns (IdResponse) {}
   rpc addMedia (AddMediaRequest) returns (MediaResponse) {}
   rpc addMedias (stream AddMediaRequest) returns (stream AddMediaStreamResponse) {} 
-  rpc deleteMedia (DeleteMediaRequest) returns (StatusResponse) {}
+  rpc deleteMedia (IdRequest) returns (StatusResponse) {}
 
 	// TagSets
 	rpc getTagSets(EmptyRequest) returns (stream TagSetResponse) {};
-	rpc getTagSetById(GetTagSetRequestById) returns (TagSetResponse) {};
+	rpc getTagSetById(IdRequest) returns (TagSetResponse) {};
 	rpc getTagSetByName(GetTagSetRequestByName) returns (TagSetResponse) {};
 	rpc createTagSet(CreateTagSetRequest) returns (TagSetResponse) {};
 
 	// Tags
 	rpc getTags(EmptyRequest) returns (stream TagResponse) {};
-	rpc getTag(GetTagRequest) returns (TagResponse) {};
+	rpc getTag(IdRequest) returns (TagResponse) {};
 	rpc createOrGetTag(CreateTagRequest) returns (TagResponse) {};
 
 	// Tagging
 	rpc getTaggings(EmptyRequest) returns (stream TaggingResponse) {};
 	rpc createTagging(CreateTaggingRequest) returns (TaggingResponse) {};
-  rpc getMediasWithTag(GetMediasWithTagRequest) returns (stream IdResponse) {};
-  rpc getMediaTags(GetMediaTagsRequest) returns (stream IdResponse) {};
+  rpc getMediasWithTag(IdRequest) returns (stream IdResponse) {};
+  rpc getMediaTags(IdRequest) returns (stream IdResponse) {};
 
+  // Hierarchies
+	rpc getHierarchies(EmptyRequest) returns (stream HierarchyResponse) {};
+  rpc getHierarchy(IdRequest) returns (HierarchyResponse) {};
+	rpc createHierarchy(CreateHierarchyRequest) returns (HierarchyResponse) {};
+  
+  rpc createNode (CreateNodeRequest) returns (NodeResponse) {};
+  rpc getNode (IdRequest) returns (NodeResponse) {};
+  rpc getNodesOfHierarchy (IdRequest) returns (stream NodeResponse) {};
 	rpc resetDatabase (EmptyRequest) returns (StatusResponse) {}
 }
 
-// Misc
+// General use
 message EmptyRequest {}
 
 message StatusResponse {
 	bool success = 1;
 }
 
+message IdRequest {
+  int64 id = 1;
+}
+
+message IdResponse {
+	bool success = 1;
+	int64 id = 2;
+}
+
 // Media / cubeobjects
 
 message Media {
-	int32 id = 1;
+	int64 id = 1;
 	string file_uri = 2;
-	int32 file_type = 3;
+  int32 file_type = 3;
 	string thumbnail_uri = 4;
 }
 
@@ -51,17 +68,9 @@ message MediaResponse {
 	bool success = 1;
 	Media media = 2;
 }
-message GetMediaByIdRequest {
-	int32 id = 1;
-}
 
 message GetMediaIdFromURIRequest {
 	string uri = 1;
-}
-
-message IdResponse {
-	bool success = 1;
-	int32 id = 2;
 }
 
 message AddMediaRequest {
@@ -70,23 +79,15 @@ message AddMediaRequest {
 
 message AddMediaStreamResponse {    
 	bool success = 1;
-	int32 count = 2;
-}
-
-message DeleteMediaRequest {
-	int32 id = 1;
+	int64 count = 2;
 }
 
 // TagSets
 
 message TagSet {
-  int32 id = 1;
+  int64 id = 1;
   string name = 2;
-  int32 tagTypeId = 3;
-}
-
-message GetTagSetRequestById {
-  int32 id = 1;
+  int64 tagTypeId = 3;
 }
 
 message GetTagSetRequestByName {
@@ -100,7 +101,7 @@ message TagSetResponse {
 
 message CreateTagSetRequest {
   string name = 1;
-  int32 tagTypeId = 2;
+  int64 tagTypeId = 2;
 }
 
 
@@ -130,8 +131,8 @@ message TimeStampValue {
 
 message Tag {
 	int64 id = 1;
-	int32 tagSetId = 2;
-	int32 tagTypeId = 3;
+	int64 tagSetId = 2;
+	int64 tagTypeId = 3;
 	oneof value {
     AlphanumericalValue alphanumerical = 4;
     TimeStampValue timestamp = 5;
@@ -141,18 +142,14 @@ message Tag {
   }
 }
 
-message GetTagRequest {
-	int64 id = 1;
-}
-
 message TagResponse {
   bool success = 1;
 	Tag tag = 2;
 }
 
 message CreateTagRequest {
-  int32 tagSetId = 2;
-	int32 tagTypeId = 3;
+  int64 tagSetId = 2;
+	int64 tagTypeId = 3;
 	oneof value {
     AlphanumericalValue alphanumerical = 4;
     TimeStampValue timestamp = 5;
@@ -172,10 +169,6 @@ message Tagging {
   int64 tagId = 2;
 }
 
-message GetTaggingsRequest {
-  int64 tagId = 1;
-}
-
 message TaggingResponse {
   bool success = 1;
   Tagging tagging = 2;
@@ -186,10 +179,44 @@ message CreateTaggingRequest {
   int64 tagId = 2;
 }
 
-message GetMediaTagsRequest {
-  int64 mediaId = 1;  
+// Hierarchies
+message Hierachy {
+  int64 id = 1;
+  string name = 2;
+  int64 tagsetId = 3;
+  int64 rootNodeId = 4;  
 }
 
-message GetMediasWithTagRequest {
-  int64 tagId = 1;  
+message GetHierarchyRequest {
+  int64 tagId = 1;
+}
+
+message HierarchyResponse {
+  bool success = 1;
+  Hierachy Hierachy = 2;
+}
+
+message CreateHierarchyRequest {
+  string name = 1;
+  int64 tagsetId = 2;
+  int64 rootNodeId = 3;
+}
+
+message CreateNodeRequest {
+  int64 tagId = 1;
+  int64 hierarchyId = 2;
+  int64 parentNodeId = 3;
+}
+
+
+message Node {
+  int64 id = 1;
+  int64 tagId = 2;
+  int64 hierarchyId = 3;
+  int64 parentNodeId = 4;
+}
+
+message NodeResponse {
+  bool success = 1;
+
 }

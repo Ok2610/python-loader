@@ -18,7 +18,7 @@ class LoaderClient:
     def get_media(self, id: int):
     # Get a single media with the given ID
         try:
-            request = dataloader_pb2.GetMediaByIdRequest(id=id)
+            request = dataloader_pb2.IdRequest(id=id)
             response = self.grpc_stub.getMediaById(request)
             if response.success:
                 return(response.media)
@@ -112,7 +112,7 @@ class LoaderClient:
 
     # Delete a single media with the given ID
     def delete(self, id: int):
-        request = dataloader_pb2.DeleteMediaRequest(id=id)
+        request = dataloader_pb2.IdRequest(id=id)
         response = self.grpc_stub.deleteMedia(request)
         if response.success:
             return {'Success': 'media removed from database.'}
@@ -140,7 +140,7 @@ class LoaderClient:
             return {'Error': 'could not create tagset.'}
     
     def get_tagset_by_id(self, id: int):
-        request = dataloader_pb2.GetTagSetRequestById(id=id)
+        request = dataloader_pb2.IdRequest(id=id)
         response = self.grpc_stub.getTagSetById(request)
         if response.success :
             return response.tagset
@@ -209,7 +209,7 @@ class LoaderClient:
             return {'Error': 'could not create tag'}
     
     def get_tag(self, id: int):
-        request = dataloader_pb2.GetTagRequest(id=id)
+        request = dataloader_pb2.IdRequest(id=id)
         response = self.grpc_stub.getTag(request)
         if response.success :
             return response.tag
@@ -240,7 +240,7 @@ class LoaderClient:
     
 
     def get_medias_with_tag(self, id: int):
-        request = dataloader_pb2.GetMediasWithTagRequest(tagId=id)
+        request = dataloader_pb2.IdRequest(id=id)
         response_iterator = self.grpc_stub.getMediasWithTag(request)
         for response in response_iterator:
             if response.success:
@@ -249,7 +249,7 @@ class LoaderClient:
                 yield {'Error': 'could not retrieve medias with the given tag_id'}
 
     def get_media_tags(self, id: int):
-        request = dataloader_pb2.GetMediaTagsRequest(mediaId=id)
+        request = dataloader_pb2.IdRequest(id=id)
         response_iterator = self.grpc_stub.getMediaTags(request)
         for response in response_iterator:
             if response.success:

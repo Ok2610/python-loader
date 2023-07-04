@@ -24,6 +24,26 @@ class AlphanumericalValue(_message.Message):
     value: str
     def __init__(self, value: _Optional[str] = ...) -> None: ...
 
+class CreateHierarchyRequest(_message.Message):
+    __slots__ = ["name", "rootNodeId", "tagsetId"]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    ROOTNODEID_FIELD_NUMBER: _ClassVar[int]
+    TAGSETID_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    rootNodeId: int
+    tagsetId: int
+    def __init__(self, name: _Optional[str] = ..., tagsetId: _Optional[int] = ..., rootNodeId: _Optional[int] = ...) -> None: ...
+
+class CreateNodeRequest(_message.Message):
+    __slots__ = ["hierarchyId", "parentNodeId", "tagId"]
+    HIERARCHYID_FIELD_NUMBER: _ClassVar[int]
+    PARENTNODEID_FIELD_NUMBER: _ClassVar[int]
+    TAGID_FIELD_NUMBER: _ClassVar[int]
+    hierarchyId: int
+    parentNodeId: int
+    tagId: int
+    def __init__(self, tagId: _Optional[int] = ..., hierarchyId: _Optional[int] = ..., parentNodeId: _Optional[int] = ...) -> None: ...
+
 class CreateTagRequest(_message.Message):
     __slots__ = ["alphanumerical", "date", "numerical", "tagSetId", "tagTypeId", "time", "timestamp"]
     ALPHANUMERICAL_FIELD_NUMBER: _ClassVar[int]
@@ -64,21 +84,15 @@ class DateValue(_message.Message):
     value: str
     def __init__(self, value: _Optional[str] = ...) -> None: ...
 
-class DeleteMediaRequest(_message.Message):
-    __slots__ = ["id"]
-    ID_FIELD_NUMBER: _ClassVar[int]
-    id: int
-    def __init__(self, id: _Optional[int] = ...) -> None: ...
-
 class EmptyRequest(_message.Message):
     __slots__ = []
     def __init__(self) -> None: ...
 
-class GetMediaByIdRequest(_message.Message):
-    __slots__ = ["id"]
-    ID_FIELD_NUMBER: _ClassVar[int]
-    id: int
-    def __init__(self, id: _Optional[int] = ...) -> None: ...
+class GetHierarchyRequest(_message.Message):
+    __slots__ = ["tagId"]
+    TAGID_FIELD_NUMBER: _ClassVar[int]
+    tagId: int
+    def __init__(self, tagId: _Optional[int] = ...) -> None: ...
 
 class GetMediaIdFromURIRequest(_message.Message):
     __slots__ = ["uri"]
@@ -86,41 +100,37 @@ class GetMediaIdFromURIRequest(_message.Message):
     uri: str
     def __init__(self, uri: _Optional[str] = ...) -> None: ...
 
-class GetMediaTagsRequest(_message.Message):
-    __slots__ = ["mediaId"]
-    MEDIAID_FIELD_NUMBER: _ClassVar[int]
-    mediaId: int
-    def __init__(self, mediaId: _Optional[int] = ...) -> None: ...
-
-class GetMediasWithTagRequest(_message.Message):
-    __slots__ = ["tagId"]
-    TAGID_FIELD_NUMBER: _ClassVar[int]
-    tagId: int
-    def __init__(self, tagId: _Optional[int] = ...) -> None: ...
-
-class GetTagRequest(_message.Message):
-    __slots__ = ["id"]
-    ID_FIELD_NUMBER: _ClassVar[int]
-    id: int
-    def __init__(self, id: _Optional[int] = ...) -> None: ...
-
-class GetTagSetRequestById(_message.Message):
-    __slots__ = ["id"]
-    ID_FIELD_NUMBER: _ClassVar[int]
-    id: int
-    def __init__(self, id: _Optional[int] = ...) -> None: ...
-
 class GetTagSetRequestByName(_message.Message):
     __slots__ = ["name"]
     NAME_FIELD_NUMBER: _ClassVar[int]
     name: str
     def __init__(self, name: _Optional[str] = ...) -> None: ...
 
-class GetTaggingsRequest(_message.Message):
-    __slots__ = ["tagId"]
-    TAGID_FIELD_NUMBER: _ClassVar[int]
-    tagId: int
-    def __init__(self, tagId: _Optional[int] = ...) -> None: ...
+class Hierachy(_message.Message):
+    __slots__ = ["id", "name", "rootNodeId", "tagsetId"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    ROOTNODEID_FIELD_NUMBER: _ClassVar[int]
+    TAGSETID_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    name: str
+    rootNodeId: int
+    tagsetId: int
+    def __init__(self, id: _Optional[int] = ..., name: _Optional[str] = ..., tagsetId: _Optional[int] = ..., rootNodeId: _Optional[int] = ...) -> None: ...
+
+class HierarchyResponse(_message.Message):
+    __slots__ = ["Hierachy", "success"]
+    HIERACHY_FIELD_NUMBER: _ClassVar[int]
+    Hierachy: Hierachy
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    success: bool
+    def __init__(self, success: bool = ..., Hierachy: _Optional[_Union[Hierachy, _Mapping]] = ...) -> None: ...
+
+class IdRequest(_message.Message):
+    __slots__ = ["id"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    def __init__(self, id: _Optional[int] = ...) -> None: ...
 
 class IdResponse(_message.Message):
     __slots__ = ["id", "success"]
@@ -149,6 +159,24 @@ class MediaResponse(_message.Message):
     media: Media
     success: bool
     def __init__(self, success: bool = ..., media: _Optional[_Union[Media, _Mapping]] = ...) -> None: ...
+
+class Node(_message.Message):
+    __slots__ = ["hierarchyId", "id", "parentNodeId", "tagId"]
+    HIERARCHYID_FIELD_NUMBER: _ClassVar[int]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    PARENTNODEID_FIELD_NUMBER: _ClassVar[int]
+    TAGID_FIELD_NUMBER: _ClassVar[int]
+    hierarchyId: int
+    id: int
+    parentNodeId: int
+    tagId: int
+    def __init__(self, id: _Optional[int] = ..., tagId: _Optional[int] = ..., hierarchyId: _Optional[int] = ..., parentNodeId: _Optional[int] = ...) -> None: ...
+
+class NodeResponse(_message.Message):
+    __slots__ = ["success"]
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    success: bool
+    def __init__(self, success: bool = ...) -> None: ...
 
 class NumericalValue(_message.Message):
     __slots__ = ["value"]

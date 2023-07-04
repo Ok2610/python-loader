@@ -21,7 +21,7 @@ class DataLoaderStub(object):
                 )
         self.getMediaById = channel.unary_unary(
                 '/dataloader.DataLoader/getMediaById',
-                request_serializer=dataloader__pb2.GetMediaByIdRequest.SerializeToString,
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.MediaResponse.FromString,
                 )
         self.getMediaIdFromURI = channel.unary_unary(
@@ -41,7 +41,7 @@ class DataLoaderStub(object):
                 )
         self.deleteMedia = channel.unary_unary(
                 '/dataloader.DataLoader/deleteMedia',
-                request_serializer=dataloader__pb2.DeleteMediaRequest.SerializeToString,
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.StatusResponse.FromString,
                 )
         self.getTagSets = channel.unary_stream(
@@ -51,7 +51,7 @@ class DataLoaderStub(object):
                 )
         self.getTagSetById = channel.unary_unary(
                 '/dataloader.DataLoader/getTagSetById',
-                request_serializer=dataloader__pb2.GetTagSetRequestById.SerializeToString,
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.TagSetResponse.FromString,
                 )
         self.getTagSetByName = channel.unary_unary(
@@ -71,7 +71,7 @@ class DataLoaderStub(object):
                 )
         self.getTag = channel.unary_unary(
                 '/dataloader.DataLoader/getTag',
-                request_serializer=dataloader__pb2.GetTagRequest.SerializeToString,
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.TagResponse.FromString,
                 )
         self.createOrGetTag = channel.unary_unary(
@@ -91,13 +91,43 @@ class DataLoaderStub(object):
                 )
         self.getMediasWithTag = channel.unary_stream(
                 '/dataloader.DataLoader/getMediasWithTag',
-                request_serializer=dataloader__pb2.GetMediasWithTagRequest.SerializeToString,
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.IdResponse.FromString,
                 )
         self.getMediaTags = channel.unary_stream(
                 '/dataloader.DataLoader/getMediaTags',
-                request_serializer=dataloader__pb2.GetMediaTagsRequest.SerializeToString,
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.IdResponse.FromString,
+                )
+        self.getHierarchies = channel.unary_stream(
+                '/dataloader.DataLoader/getHierarchies',
+                request_serializer=dataloader__pb2.EmptyRequest.SerializeToString,
+                response_deserializer=dataloader__pb2.HierarchyResponse.FromString,
+                )
+        self.getHierarchy = channel.unary_unary(
+                '/dataloader.DataLoader/getHierarchy',
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
+                response_deserializer=dataloader__pb2.HierarchyResponse.FromString,
+                )
+        self.createHierarchy = channel.unary_unary(
+                '/dataloader.DataLoader/createHierarchy',
+                request_serializer=dataloader__pb2.CreateHierarchyRequest.SerializeToString,
+                response_deserializer=dataloader__pb2.HierarchyResponse.FromString,
+                )
+        self.createNode = channel.unary_unary(
+                '/dataloader.DataLoader/createNode',
+                request_serializer=dataloader__pb2.CreateNodeRequest.SerializeToString,
+                response_deserializer=dataloader__pb2.NodeResponse.FromString,
+                )
+        self.getNode = channel.unary_unary(
+                '/dataloader.DataLoader/getNode',
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
+                response_deserializer=dataloader__pb2.NodeResponse.FromString,
+                )
+        self.getNodesOfHierarchy = channel.unary_stream(
+                '/dataloader.DataLoader/getNodesOfHierarchy',
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
+                response_deserializer=dataloader__pb2.NodeResponse.FromString,
                 )
         self.resetDatabase = channel.unary_unary(
                 '/dataloader.DataLoader/resetDatabase',
@@ -141,8 +171,7 @@ class DataLoaderServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def deleteMedia(self, request, context):
-        """NOTE: We could implement a separate addMedia rpc which would be unary and return the added media
-        """
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -216,6 +245,43 @@ class DataLoaderServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def getHierarchies(self, request, context):
+        """Hierarchies
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def getHierarchy(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def createHierarchy(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def createNode(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def getNode(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def getNodesOfHierarchy(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def resetDatabase(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -232,7 +298,7 @@ def add_DataLoaderServicer_to_server(servicer, server):
             ),
             'getMediaById': grpc.unary_unary_rpc_method_handler(
                     servicer.getMediaById,
-                    request_deserializer=dataloader__pb2.GetMediaByIdRequest.FromString,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
                     response_serializer=dataloader__pb2.MediaResponse.SerializeToString,
             ),
             'getMediaIdFromURI': grpc.unary_unary_rpc_method_handler(
@@ -252,7 +318,7 @@ def add_DataLoaderServicer_to_server(servicer, server):
             ),
             'deleteMedia': grpc.unary_unary_rpc_method_handler(
                     servicer.deleteMedia,
-                    request_deserializer=dataloader__pb2.DeleteMediaRequest.FromString,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
                     response_serializer=dataloader__pb2.StatusResponse.SerializeToString,
             ),
             'getTagSets': grpc.unary_stream_rpc_method_handler(
@@ -262,7 +328,7 @@ def add_DataLoaderServicer_to_server(servicer, server):
             ),
             'getTagSetById': grpc.unary_unary_rpc_method_handler(
                     servicer.getTagSetById,
-                    request_deserializer=dataloader__pb2.GetTagSetRequestById.FromString,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
                     response_serializer=dataloader__pb2.TagSetResponse.SerializeToString,
             ),
             'getTagSetByName': grpc.unary_unary_rpc_method_handler(
@@ -282,7 +348,7 @@ def add_DataLoaderServicer_to_server(servicer, server):
             ),
             'getTag': grpc.unary_unary_rpc_method_handler(
                     servicer.getTag,
-                    request_deserializer=dataloader__pb2.GetTagRequest.FromString,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
                     response_serializer=dataloader__pb2.TagResponse.SerializeToString,
             ),
             'createOrGetTag': grpc.unary_unary_rpc_method_handler(
@@ -302,13 +368,43 @@ def add_DataLoaderServicer_to_server(servicer, server):
             ),
             'getMediasWithTag': grpc.unary_stream_rpc_method_handler(
                     servicer.getMediasWithTag,
-                    request_deserializer=dataloader__pb2.GetMediasWithTagRequest.FromString,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
                     response_serializer=dataloader__pb2.IdResponse.SerializeToString,
             ),
             'getMediaTags': grpc.unary_stream_rpc_method_handler(
                     servicer.getMediaTags,
-                    request_deserializer=dataloader__pb2.GetMediaTagsRequest.FromString,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
                     response_serializer=dataloader__pb2.IdResponse.SerializeToString,
+            ),
+            'getHierarchies': grpc.unary_stream_rpc_method_handler(
+                    servicer.getHierarchies,
+                    request_deserializer=dataloader__pb2.EmptyRequest.FromString,
+                    response_serializer=dataloader__pb2.HierarchyResponse.SerializeToString,
+            ),
+            'getHierarchy': grpc.unary_unary_rpc_method_handler(
+                    servicer.getHierarchy,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
+                    response_serializer=dataloader__pb2.HierarchyResponse.SerializeToString,
+            ),
+            'createHierarchy': grpc.unary_unary_rpc_method_handler(
+                    servicer.createHierarchy,
+                    request_deserializer=dataloader__pb2.CreateHierarchyRequest.FromString,
+                    response_serializer=dataloader__pb2.HierarchyResponse.SerializeToString,
+            ),
+            'createNode': grpc.unary_unary_rpc_method_handler(
+                    servicer.createNode,
+                    request_deserializer=dataloader__pb2.CreateNodeRequest.FromString,
+                    response_serializer=dataloader__pb2.NodeResponse.SerializeToString,
+            ),
+            'getNode': grpc.unary_unary_rpc_method_handler(
+                    servicer.getNode,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
+                    response_serializer=dataloader__pb2.NodeResponse.SerializeToString,
+            ),
+            'getNodesOfHierarchy': grpc.unary_stream_rpc_method_handler(
+                    servicer.getNodesOfHierarchy,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
+                    response_serializer=dataloader__pb2.NodeResponse.SerializeToString,
             ),
             'resetDatabase': grpc.unary_unary_rpc_method_handler(
                     servicer.resetDatabase,
@@ -354,7 +450,7 @@ class DataLoader(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/getMediaById',
-            dataloader__pb2.GetMediaByIdRequest.SerializeToString,
+            dataloader__pb2.IdRequest.SerializeToString,
             dataloader__pb2.MediaResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -422,7 +518,7 @@ class DataLoader(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/deleteMedia',
-            dataloader__pb2.DeleteMediaRequest.SerializeToString,
+            dataloader__pb2.IdRequest.SerializeToString,
             dataloader__pb2.StatusResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -456,7 +552,7 @@ class DataLoader(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/getTagSetById',
-            dataloader__pb2.GetTagSetRequestById.SerializeToString,
+            dataloader__pb2.IdRequest.SerializeToString,
             dataloader__pb2.TagSetResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -524,7 +620,7 @@ class DataLoader(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/getTag',
-            dataloader__pb2.GetTagRequest.SerializeToString,
+            dataloader__pb2.IdRequest.SerializeToString,
             dataloader__pb2.TagResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -592,7 +688,7 @@ class DataLoader(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/dataloader.DataLoader/getMediasWithTag',
-            dataloader__pb2.GetMediasWithTagRequest.SerializeToString,
+            dataloader__pb2.IdRequest.SerializeToString,
             dataloader__pb2.IdResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -609,8 +705,110 @@ class DataLoader(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/dataloader.DataLoader/getMediaTags',
-            dataloader__pb2.GetMediaTagsRequest.SerializeToString,
+            dataloader__pb2.IdRequest.SerializeToString,
             dataloader__pb2.IdResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def getHierarchies(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/dataloader.DataLoader/getHierarchies',
+            dataloader__pb2.EmptyRequest.SerializeToString,
+            dataloader__pb2.HierarchyResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def getHierarchy(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/getHierarchy',
+            dataloader__pb2.IdRequest.SerializeToString,
+            dataloader__pb2.HierarchyResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def createHierarchy(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/createHierarchy',
+            dataloader__pb2.CreateHierarchyRequest.SerializeToString,
+            dataloader__pb2.HierarchyResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def createNode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/createNode',
+            dataloader__pb2.CreateNodeRequest.SerializeToString,
+            dataloader__pb2.NodeResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def getNode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/getNode',
+            dataloader__pb2.IdRequest.SerializeToString,
+            dataloader__pb2.NodeResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def getNodesOfHierarchy(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/dataloader.DataLoader/getNodesOfHierarchy',
+            dataloader__pb2.IdRequest.SerializeToString,
+            dataloader__pb2.NodeResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

@@ -40,7 +40,7 @@ class DataLoader(DataLoaderServicer):
 
 
     #!================ Medias =============================================================================
-    def getMediaById(self, request: dataloader_pb2.GetMediaByIdRequest, context) -> dataloader_pb2.MediaResponse:
+    def getMediaById(self, request: dataloader_pb2.IdRequest, context) -> dataloader_pb2.MediaResponse:
         thread_id = shortuuid.ShortUUID().random(length=7)
         print("[%s] Received getMediaById request with id=%d" % (thread_id, request.id))
         try:
@@ -106,7 +106,7 @@ class DataLoader(DataLoaderServicer):
 
 
 
-    def addMedia(self, request, context):
+    def addMedia(self, request: dataloader_pb2.AddMediaRequest, context):
         thread_id = shortuuid.ShortUUID().random(length=7)
         print("[%s] Received addMedia request." % thread_id)
         request_counter = 0
@@ -174,7 +174,7 @@ VALUES
         # print("[%s] -> Operation completed, added %d elements to DB" % (thread_id, request_counter))
 
 
-    def deleteMedia(self, request: dataloader_pb2.DeleteMediaRequest, context) -> dataloader_pb2.StatusResponse:
+    def deleteMedia(self, request: dataloader_pb2.IdRequest, context) -> dataloader_pb2.StatusResponse:
         thread_id = shortuuid.ShortUUID().random(length=7)
         print("[%s] Received deleteMedia request with id=%d" % (thread_id, request.id))
         try:
@@ -215,7 +215,7 @@ VALUES
             print("[%s] -> Error: %s" % (thread_id, str(e)))
         # print("[%s] -> Fetched %d items from database" % (thread_id, count))
 
-    def getTagSetById(self, request: dataloader_pb2.GetTagSetRequestById, context) -> dataloader_pb2.TagSetResponse:
+    def getTagSetById(self, request: dataloader_pb2.IdRequest, context) -> dataloader_pb2.TagSetResponse:
         thread_id = shortuuid.ShortUUID().random(length=7)
         print("[%s] Received getTagsetById request with id=%d" % (thread_id, request.id))
         try:
@@ -282,7 +282,7 @@ VALUES
         
 
     #!================ Tags ===============================================================================
-    def getTags(self, request, context):
+    def getTags(self, request: dataloader_pb2.EmptyRequest, context):
         thread_id = shortuuid.ShortUUID().random(length=7)
         print("[%s] Received getTags request." % thread_id)
         count = 0
@@ -361,7 +361,7 @@ LEFT JOIN
         # print("[%s] -> Fetched %d items from database" % (thread_id, count))
 
 
-    def getTag(self, request: dataloader_pb2.GetTagRequest, context) -> dataloader_pb2.TagResponse:
+    def getTag(self, request: dataloader_pb2.IdRequest, context) -> dataloader_pb2.TagResponse:
         thread_id = shortuuid.ShortUUID().random(length=7)
         print("[%s] Received getTag request with id=%d" % (thread_id, request.id))
         try:
@@ -634,13 +634,13 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
         # print("[%s] -> Fetched %d items from database" % (thread_id, count))
 
 
-    def getMediasWithTag(self, request: dataloader_pb2.GetMediasWithTagRequest, context):
+    def getMediasWithTag(self, request: dataloader_pb2.IdRequest, context):
         thread_id = shortuuid.ShortUUID().random(length=7)
-        print("[%s] Received getMediasWithTag request with tag_id=%d" % (thread_id, request.tagId))
+        print("[%s] Received getMediasWithTag request with tag_id=%d" % (thread_id, request.id))
         count = 0
         try:
             sql = ("SELECT object_id FROM public.objecttagrelations WHERE tag_id = %d"
-                   % request.tagId)
+                   % request.id)
             self.cursor.execute(sql)
             res = self.cursor.fetchall()
             for row in res:
@@ -654,13 +654,13 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             yield dataloader_pb2.IdResponse(success=False)
         # print("[%s] -> Fetched %d items from database" % (thread_id, count))
     
-    def getMediaTags(self, request: dataloader_pb2.GetMediaTagsRequest, context):
+    def getMediaTags(self, request: dataloader_pb2.IdRequest, context):
         thread_id = shortuuid.ShortUUID().random(length=7)
-        print("[%s] Received getMediaTags request with media_id=%d" % (thread_id, request.mediaId))
+        print("[%s] Received getMediaTags request with media_id=%d" % (thread_id, request.id))
         count = 0
         try:
             sql = ("SELECT tag_id FROM public.objecttagrelations WHERE object_id = %d"
-                   % request.mediaId)
+                   % request.id)
             self.cursor.execute(sql)
             res = self.cursor.fetchall()
             for row in res:
