@@ -218,6 +218,63 @@ class LoaderClient:
 
     #!================ Tagging functions ======================================================================
 
+    def add_node(self, tag_id: int, hierarchy_id: int, parentnode_id: int):
+        request = dataloader_pb2.CreateNodeRequest(
+            tagId=tag_id,
+            hierarchyId=hierarchy_id,
+            parentNodeId=parentnode_id
+        )
+        response = self.grpc_stub.createNode(request)
+        if response.success:
+            return response.node
+        else:
+            return {'Error': 'could not create tagset'}
+        
+    def get_node(self, id: int):
+        request = dataloader_pb2.IdRequest(id=id)
+        response = self.grpc_stub.getNode(request)
+        if response.success:
+            return response.node
+        else:
+            return {'Error': 'could not find node with given ID'}
+    
+
+
+#!================ Hierarchy functions ====================================================================
+
+    def listall_hierarchies(self):
+        request = dataloader_pb2.EmptyRequest()
+        response_iterator = self.grpc_stub.getHierarchies(request)
+        for response in response_iterator:
+            if response.success:
+                yield response.hierarchy
+            else:
+                yield {'Error': 'Request failed.'}
+
+    def add_hierarchy(self, name: str, tagset_id: int, rootnode_id: int):
+        request = dataloader_pb2.CreateHierarchyRequest(
+            name=name,
+            tagsetId=tagset_id,
+            rootNodeId=rootnode_id
+        )
+        response = self.grpc_stub.createHierarchy(request)
+        if response.success:
+            return response.hierarchy
+        else:
+            return {'Error': 'could not create tagset'}
+    
+
+    def get_hierarchy(self, id: int):
+        request = dataloader_pb2.IdRequest(id=id)
+        response = self.grpc_stub.getHierarchy(request)
+        if response.success:
+            yield response.id
+        else:
+            yield {'Error': 'could not retrieve medias with the given tag_id'}
+
+
+    #!================ Node functions ======================================================================
+
     def listall_taggings(self):
         request = dataloader_pb2.EmptyRequest()
         response_iterator = self.grpc_stub.getTaggings(request)
@@ -256,6 +313,7 @@ class LoaderClient:
                 yield response.id
             else:
                 yield {'Error': 'could not retrieve tags with the given media_id'}
+
 
     #!================ DB management ======================================================================
 
