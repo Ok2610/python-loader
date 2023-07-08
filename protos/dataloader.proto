@@ -24,19 +24,23 @@ service DataLoader {
 
 	// Tagging
 	rpc getTaggings(EmptyRequest) returns (stream TaggingResponse) {};
-	rpc createTagging(CreateTaggingRequest) returns (TaggingResponse) {};
   rpc getMediasWithTag(IdRequest) returns (stream IdResponse) {};
   rpc getMediaTags(IdRequest) returns (stream IdResponse) {};
+	rpc createTagging(CreateTaggingRequest) returns (TaggingResponse) {};
 
   // Hierarchies
 	rpc getHierarchies(EmptyRequest) returns (stream HierarchyResponse) {};
   rpc getHierarchy(IdRequest) returns (HierarchyResponse) {};
 	rpc createHierarchy(CreateHierarchyRequest) returns (HierarchyResponse) {};
   
-  rpc createNode (CreateNodeRequest) returns (NodeResponse) {};
+  // Nodes
   rpc getNode (IdRequest) returns (NodeResponse) {};
   rpc getNodesOfHierarchy (IdRequest) returns (stream NodeResponse) {};
-	rpc resetDatabase (EmptyRequest) returns (StatusResponse) {}
+  rpc getChildNodes(IdRequest) returns (stream NodeResponse) {};
+  rpc createNode (CreateNodeRequest) returns (NodeResponse) {};
+
+  // Other
+	rpc resetDatabase (EmptyRequest) returns (StatusResponse) {};
 }
 
 // General use
@@ -180,7 +184,7 @@ message CreateTaggingRequest {
 }
 
 // Hierarchies
-message Hierachy {
+message Hierarchy {
   int64 id = 1;
   string name = 2;
   int64 tagsetId = 3;
@@ -193,7 +197,7 @@ message GetHierarchyRequest {
 
 message HierarchyResponse {
   bool success = 1;
-  Hierachy Hierachy = 2;
+  Hierarchy hierarchy = 2;
 }
 
 message CreateHierarchyRequest {
@@ -218,5 +222,5 @@ message Node {
 
 message NodeResponse {
   bool success = 1;
-
+  Node node = 2;
 }

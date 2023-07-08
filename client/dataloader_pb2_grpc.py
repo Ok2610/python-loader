@@ -129,6 +129,11 @@ class DataLoaderStub(object):
                 request_serializer=dataloader__pb2.IdRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.NodeResponse.FromString,
                 )
+        self.getChildNodes = channel.unary_stream(
+                '/dataloader.DataLoader/getChildNodes',
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
+                response_deserializer=dataloader__pb2.NodeResponse.FromString,
+                )
         self.resetDatabase = channel.unary_unary(
                 '/dataloader.DataLoader/resetDatabase',
                 request_serializer=dataloader__pb2.EmptyRequest.SerializeToString,
@@ -265,7 +270,8 @@ class DataLoaderServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def createNode(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Nodes
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -282,8 +288,15 @@ class DataLoaderServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def resetDatabase(self, request, context):
+    def getChildNodes(self, request, context):
         """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def resetDatabase(self, request, context):
+        """Other
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -403,6 +416,11 @@ def add_DataLoaderServicer_to_server(servicer, server):
             ),
             'getNodesOfHierarchy': grpc.unary_stream_rpc_method_handler(
                     servicer.getNodesOfHierarchy,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
+                    response_serializer=dataloader__pb2.NodeResponse.SerializeToString,
+            ),
+            'getChildNodes': grpc.unary_stream_rpc_method_handler(
+                    servicer.getChildNodes,
                     request_deserializer=dataloader__pb2.IdRequest.FromString,
                     response_serializer=dataloader__pb2.NodeResponse.SerializeToString,
             ),
@@ -807,6 +825,23 @@ class DataLoader(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/dataloader.DataLoader/getNodesOfHierarchy',
+            dataloader__pb2.IdRequest.SerializeToString,
+            dataloader__pb2.NodeResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def getChildNodes(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/dataloader.DataLoader/getChildNodes',
             dataloader__pb2.IdRequest.SerializeToString,
             dataloader__pb2.NodeResponse.FromString,
             options, channel_credentials,

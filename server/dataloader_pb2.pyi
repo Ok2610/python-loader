@@ -106,7 +106,7 @@ class GetTagSetRequestByName(_message.Message):
     name: str
     def __init__(self, name: _Optional[str] = ...) -> None: ...
 
-class Hierachy(_message.Message):
+class Hierarchy(_message.Message):
     __slots__ = ["id", "name", "rootNodeId", "tagsetId"]
     ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
@@ -119,12 +119,12 @@ class Hierachy(_message.Message):
     def __init__(self, id: _Optional[int] = ..., name: _Optional[str] = ..., tagsetId: _Optional[int] = ..., rootNodeId: _Optional[int] = ...) -> None: ...
 
 class HierarchyResponse(_message.Message):
-    __slots__ = ["Hierachy", "success"]
-    HIERACHY_FIELD_NUMBER: _ClassVar[int]
-    Hierachy: Hierachy
+    __slots__ = ["hierarchy", "success"]
+    HIERARCHY_FIELD_NUMBER: _ClassVar[int]
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    hierarchy: Hierarchy
     success: bool
-    def __init__(self, success: bool = ..., Hierachy: _Optional[_Union[Hierachy, _Mapping]] = ...) -> None: ...
+    def __init__(self, success: bool = ..., hierarchy: _Optional[_Union[Hierarchy, _Mapping]] = ...) -> None: ...
 
 class IdRequest(_message.Message):
     __slots__ = ["id"]
@@ -173,10 +173,12 @@ class Node(_message.Message):
     def __init__(self, id: _Optional[int] = ..., tagId: _Optional[int] = ..., hierarchyId: _Optional[int] = ..., parentNodeId: _Optional[int] = ...) -> None: ...
 
 class NodeResponse(_message.Message):
-    __slots__ = ["success"]
+    __slots__ = ["node", "success"]
+    NODE_FIELD_NUMBER: _ClassVar[int]
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    node: Node
     success: bool
-    def __init__(self, success: bool = ...) -> None: ...
+    def __init__(self, success: bool = ..., node: _Optional[_Union[Node, _Mapping]] = ...) -> None: ...
 
 class NumericalValue(_message.Message):
     __slots__ = ["value"]

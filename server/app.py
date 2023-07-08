@@ -697,6 +697,182 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             response = dataloader_pb2.TaggingResponse(success=False)
             return response
 
+    #!================ Hierarchies  =======================================================================
+    """ Hierarchies
+	rpc getHierarchies(EmptyRequest) returns (stream HierarchyResponse) {};
+    rpc getHierarchy(IdRequest) returns (HierarchyResponse) {};
+	rpc createHierarchy(CreateHierarchyRequest) returns (HierarchyResponse) {};
+    
+    rpc createNode (CreateNodeRequest) returns (NodeResponse) {};
+    rpc getNode (IdRequest) returns (NodeResponse) {};
+    rpc getNodesOfHierarchy (IdRequest) returns (stream NodeResponse) {};
+    rpc GetChildNodes(IdRequest) returns (stream NodeResponse) {};"""
+
+    def getHierarchies(self, request: dataloader_pb2.EmptyRequest, context) : 
+        thread_id = shortuuid.ShortUUID().random(length=7)
+        print("[%s] Received getHierarchies request." % thread_id)
+        count = 0
+        try:
+            sql = "SELECT * FROM public.hierarchies"
+            self.cursor.execute(sql)
+            res = self.cursor.fetchall()
+            for row in res:
+                count += 1
+                yield dataloader_pb2.HierarchyResponse(
+                    success=True,
+                    hierarchy=dataloader_pb2.Hierarchy(
+                        id=row['id'],
+                        name=row['name'],
+                        tagsetId=row['tagset_id'],
+                        rootNodeId=row['rootnode_id']
+                    )
+                )
+        except Exception as e:
+            print("[%s] -> Error: %s" % (thread_id, str(e)))
+            yield dataloader_pb2.HierarchyResponse(success=False)
+
+
+    def getHierarchy(self, request: dataloader_pb2.IdRequest, context) -> dataloader_pb2.HierarchyResponse:
+        thread_id = shortuuid.ShortUUID().random(length=7)
+        print("[%s] Received getHierarchy request with id=%d" % (thread_id, request.id))
+        try:
+            sql = """SELECT * FROM public.hierachies WHERE id=%d""" % request.id
+            self.cursor.execute(sql)
+            result = self.cursor.fetchall()[0]
+            # print("[%s] -> Element fetched from DB, sending back to client..." % thread_id)
+            return dataloader_pb2.HierarchyResponse(
+                success=True,
+                hierarchy=dataloader_pb2.Hierarchy(
+                id=result['id'],
+                name=result['name'],
+                tagsetId=result['tagset_id'],
+                rootNodeId=result['rootnode_id']
+                )
+            )
+        except Exception as e:
+            print("[%s] -> No results were fetched, sending error message to client..." % thread_id)
+            return dataloader_pb2.HierarchyResponse(success=False)    
+
+
+    def createHierarchy(self, request: dataloader_pb2.CreateHierarchyRequest, context) -> dataloader_pb2.HierarchyResponse:
+        thread_id = shortuuid.ShortUUID().random(length=7)
+        print("[%s] Received createHierarchy request." % thread_id)
+        request_counter = 0
+        sql = """INSERT INTO public.hierarchies (name, tagset_id, rootnode_id)
+VALUES ('%s', %d, '%s') RETURNING *;""" % (
+                request.name,
+                request.tagsetId,
+                request.rootNodeId
+            )
+        try:
+            self.cursor.execute(sql)
+            response = self.cursor.fetchall()[0]
+            return dataloader_pb2.HierarchyResponse(
+                success=True,
+                hierarchy=dataloader_pb2.Hierarchy(
+                    id=response['id'],
+                    name=response['name'],
+                    tagsetId=response['tagset_id'],
+                    rootNodeId=response['rootnode_id']
+                )
+            )
+        except Exception as e:
+            print("[%s] -> Error: %s" % (thread_id, str(e)))
+            return dataloader_pb2.HierarchyResponse(success=False)
+        
+    #!================ Nodes ==============================================================================
+    def getNode(self, request: dataloader_pb2.IdRequest, context) -> dataloader_pb2.NodeResponse:
+        thread_id = shortuuid.ShortUUID().random(length=7)
+        print("[%s] Received getNode request with id=%d" % (thread_id, request.id))
+        try:
+            sql = """SELECT * FROM public.nodes WHERE id=%d""" % request.id
+            self.cursor.execute(sql)
+            result = self.cursor.fetchall()[0]
+            # print("[%s] -> Element fetched from DB, sending back to client..." % thread_id)
+            return dataloader_pb2.NodeResponse(
+                success=True,
+                node=dataloader_pb2.Node(
+                    id=result['id'],
+                    tagId=result['tag_id'],
+                    hierarchyId=result['hierarchy_id'],
+                    parentNodeId=result['parentnode_id']
+                )
+            )
+        except Exception as e:
+            print("[%s] -> No results were fetched, sending error message to client..." % thread_id)
+            return dataloader_pb2.NodeResponse(success=False)   
+    
+    def getNodesOfHierarchy(self, request: dataloader_pb2.IdRequest, context) :
+        thread_id = shortuuid.ShortUUID().random(length=7)
+        print("[%s] Received getNodesOfHierarchy request with id=%d" % (thread_id, request.id))
+        try:
+            sql = """SELECT * FROM public.nodes WHERE hierarchy_id=%d""" % request.id
+            self.cursor.execute(sql)
+            results = self.cursor.fetchall()
+            # print("[%s] -> Element fetched from DB, sending back to client..." % thread_id)
+            for result in results:
+                yield dataloader_pb2.NodeResponse(
+                    success=True,
+                    node=dataloader_pb2.Node(
+                        id=result['id'],
+                        tagId=result['tag_id'],
+                        hierarchyId=result['hierarchy_id'],
+                        parentNodeId=result['parentnode_id']
+                    )
+                )
+        except Exception as e:
+            print("[%s] -> No results were fetched, sending error message to client..." % thread_id)
+            yield dataloader_pb2.NodeResponse(success=False)
+
+    def getChildNodes(self, request: dataloader_pb2.IdRequest, context) :
+        thread_id = shortuuid.ShortUUID().random(length=7)
+        print("[%s] Received getChildNodes request with id=%d" % (thread_id, request.id))
+        try:
+            sql = """SELECT * FROM public.nodes WHERE parentnode_id=%d""" % request.id
+            self.cursor.execute(sql)
+            results = self.cursor.fetchall()
+            # print("[%s] -> Element fetched from DB, sending back to client..." % thread_id)
+            for result in results:
+                yield dataloader_pb2.NodeResponse(
+                    success=True,
+                    node=dataloader_pb2.Node(
+                        id=result['id'],
+                        tagId=result['tag_id'],
+                        hierarchyId=result['hierarchy_id'],
+                        parentNodeId=result['parentnode_id']
+                    )
+                )
+        except Exception as e:
+            print("[%s] -> No results were fetched, sending error message to client..." % thread_id)
+            yield dataloader_pb2.NodeResponse(success=False)
+
+    def createNode(self, request: dataloader_pb2.CreateNodeRequest, context) -> dataloader_pb2.NodeResponse :
+        thread_id = shortuuid.ShortUUID().random(length=7)
+        print("[%s] Received creatNode request." % thread_id)
+        request_counter = 0
+        sql = """INSERT INTO public.nodes (tag_id, hierarchy_id, parentnode_id)
+VALUES ('%s', %d, '%s') RETURNING *;""" % (
+                request.tagId,
+                request.hierarchyId,
+                request.parentNodeId
+            )
+        try:
+            self.cursor.execute(sql)
+            response = self.cursor.fetchall()[0]
+            return dataloader_pb2.NodeResponse(
+                success=True,
+                node=dataloader_pb2.Node(
+                    id=response['id'],
+                    tagId=response['tag_id'],
+                    hierarchyId=response['hierarchy_id'],
+                    parentNodeId=response['parentnode_id']
+                )
+            )
+        except Exception as e:
+            print("[%s] -> Error: %s" % (thread_id, str(e)))
+            return dataloader_pb2.NodeResponse(success=False)
+
+
     #!================ DB Management ======================================================================
     def resetDatabase(self, request: dataloader_pb2.EmptyRequest, context) -> dataloader_pb2.StatusResponse:
         thread_id = shortuuid.ShortUUID().random(length=7)
