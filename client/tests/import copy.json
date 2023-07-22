@@ -21,30 +21,13 @@
             "type": 5
         }
     ],
-    "_comment": "hierarchies should be stated here to enable assignements of childs to tags.",
-    "_comment_line2": "The root node tag will be affected to all medias with a tag of the hierarchies' tagset.",
-    "hierarchies": [
-        {
-            "name": "Geography",
-            "tagset_id": 1,
-            "root_node": "World"
-        }
-    ],
     "medias": [
         {
             "path": "C:\\Users\\user\\Desktop\\4IF\\Stage\\iceland\\wdir\\python-loader\\lessfiles\\background.jpg",
             "tags": [
                 {
                     "tagset_id": 1,
-                    "value": "Europe",
-                    "child_tags":[
-                        {
-                            "value": "UK",
-                            "child_tags": [
-                                { "value":"London" }
-                            ]
-                        }
-                    ]
+                    "value": "London"
                 },
                 {
                     "tagset_id": 2,
@@ -69,33 +52,19 @@
             "tags": [
                 {
                     "tagset_id": 1,
-                    "value": "Europe",
-                    "child_tags":[
-                        {
-                            "value": "France",
-                            "child_tags": [
-                                { 
-                                    "value":"Paris",
-                                    "child_tags": []
-                                }
-                            ]
-                        }
-                    ]
+                    "value": "Paris"
                 },
                 {
                     "tagset_id": 2,
-                    "value": "2023-06-08 11:00:00",
-                    "child_tags": []
+                    "value": "2023-06-08 11:00:00"
                 },
                 {
                     "tagset_id": 4,
-                    "value": "2023-06-08",
-                    "child_tags": []
+                    "value": "2023-06-08"
                 },
                 {
                     "tagset_id": 3,
-                    "value": "13:45:00",
-                    "child_tags": []
+                    "value": "13:45:00"
                 }
             ]
         },
@@ -104,18 +73,7 @@
             "tags": [
                 {
                     "tagset_id": 1,
-                    "value": "America",
-                    "child_tags":[
-                        {
-                            "value": "USA",
-                            "child_tags": [
-                                { 
-                                    "value":"New York",
-                                    "child_tags": []
-                                }
-                            ]
-                        }
-                    ]
+                    "value": "New York"
                 },
                 {
                     "tagset_id": 2,
@@ -140,18 +98,7 @@
             "tags": [
                 {
                     "tagset_id": 1,
-                    "value": "Asia",
-                    "child_tags":[
-                        {
-                            "value": "Japan",
-                            "child_tags": [
-                                { 
-                                    "value":"Tokyo",
-                                    "child_tags": []
-                                }
-                            ]
-                        }
-                    ]
+                    "value": "Tokyo"
                 },
                 {
                     "tagset_id": 2,

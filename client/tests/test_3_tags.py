@@ -19,11 +19,11 @@ def test_cli():
 
     # Test 'get all tags' with empty DB
     result = runner.invoke(cli, ['get', 'tags'])
-    assert result.output.strip() == ""
+    assert result.output.strip() == "No results were fetched."
     
     # Test 'get tag' with id=1 with empty DB
     result = runner.invoke(cli, ['get', 'tag', '1'])
-    assert result.output.strip() == "{'Error': 'could not find tag with given ID'}"
+    assert result.output.strip() == "No results were fetched."
 
     # Test 'add tag' with correct types and values
 
@@ -90,21 +90,21 @@ date {
 
     # Test if no copy tag has been added
     result = runner.invoke(cli, ['get', 'tag', '7'])
-    assert result.output.strip() == "{'Error': 'could not find tag with given ID'}"
+    assert result.output.strip() == "No results were fetched."
     
 
     # Test 'add tag' with various incorrect types
     result = runner.invoke(cli, ['add', 'tag', '3', '1', 'London'])
-    assert result.output.strip() == "{'Error': 'could not create tag'}"
+    assert result.output.strip() == "Error: incorrect type for the specified Tagset."
 
     result = runner.invoke(cli, ['add', 'tag', '1', '5', '1234'])
-    assert result.output.strip() == "{'Error': 'could not create tag'}"
+    assert result.output.strip() == "Error: incorrect type for the specified Tagset."
 
     result = runner.invoke(cli, ['add', 'tag', '2', '5', '1234'])
-    assert result.output.strip() == "{'Error': 'could not create tag'}"
+    assert result.output.strip() == "Error: incorrect type for the specified Tagset."
 
     result = runner.invoke(cli, ['add', 'tag', '1', '4', '2022-01-17'])
-    assert result.output.strip() == "{'Error': 'could not create tag'}"
+    assert result.output.strip() == "Error: incorrect type for the specified Tagset."
 
 
    # Test get methods

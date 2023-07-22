@@ -2,8 +2,8 @@ import os
 import json
 
 import grpc
-import dataloader_pb2
-import dataloader_pb2_grpc
+import dataloader_pb2 as rpc_objects
+from dataloader_pb2_grpc import DataLoaderStub
 
 from google.protobuf.json_format import MessageToJson
 
@@ -11,46 +11,34 @@ from google.protobuf.json_format import MessageToJson
 class LoaderClient:
     def __init__(self, grpc_host='localhost', grpc_port='50051') -> None:
         self.grpc_channel = grpc.insecure_channel('%s:%s' % (grpc_host, grpc_port))
-        self.grpc_stub = dataloader_pb2_grpc.DataLoaderStub(self.grpc_channel)
+        self.grpc_stub = DataLoaderStub(self.grpc_channel)
 
     #!================ Media/media functions ======================================================================
 
     def get_media(self, id: int):
     # Get a single media with the given ID
-        try:
-            request = dataloader_pb2.IdRequest(id=id)
-            response = self.grpc_stub.getMediaById(request)
-            if response.success:
-                return(response.media)
-            else:
-                raise Exception("Could not find media with the given ID")
-        except Exception as e:
-            return json.loads('{"Error": "%s"}' % e)
+        request = rpc_objects.IdRequest(id=id)
+        response = self.grpc_stub.getMediaById(request)
+        return response.error_message if response.error_message \
+        else response.media
 
     
     def get_id(self, file_uri: str):
     # Get a an media ID using its URI
-        try:
-            request = dataloader_pb2.GetMediaIdFromURIRequest(uri=file_uri)
-            response = self.grpc_stub.getMediaIdFromURI(request)
-            if response.success:
-                return response.id
-            else:
-                raise Exception("URI not found in database.")
-        except Exception as e:
-            return json.loads('{"Error": "%s"}' % e)
+        request = rpc_objects.GetMediaIdFromURIRequest(uri=file_uri)
+        response = self.grpc_stub.getMediaIdFromURI(request)
+        return response.error_message if response.error_message \
+        else response.id
 
 
     def listall_medias(self):
     # List all the medias stored
-        request = dataloader_pb2.EmptyRequest()
+        request = rpc_objects.EmptyRequest()
         response_iterator = self.grpc_stub.getMedias(request)
         for response in response_iterator:
-            if response.success:
-                yield response.media
-            else:
-                yield {'Error': 'Request failed.'}
-        
+            yield response.error_message if response.error_message \
+            else response.media
+            
 
     def add_dir(self, directory: str, formats):
     # Add files from a specified directory to the database.
@@ -69,7 +57,7 @@ class LoaderClient:
                     else: 
                         file_type = 3		# Other
                     file_count += 1
-                    request = dataloader_pb2.AddMediaRequest(media={
+                    request = rpc_objects.CreateMediaRequest(media={
                         "file_uri": file_path,
                         "file_type": file_type,
                         "thumbnail_uri": file_path
@@ -77,13 +65,12 @@ class LoaderClient:
                     yield request
         
        
-        response_iterator = self.grpc_stub.addMedias(add_media_requests_generator(directory))
+        response_iterator = self.grpc_stub.createMedias(add_media_requests_generator(directory))
         for response in response_iterator:
-            if response.success:
-                yield {'Success': 'added %d medias to database.' % (response.count)}
-            else:
-                yield {'Error': 'failed to add 1 batch of medias to database.'}
-        yield {'Info': '%d files were found in the directory.' % file_count}
+            yield response.error_message if response.error_message \
+            else 'Info: added %d medias to database.' % (response.count)
+        if file_count == 0 : yield 'Info: no files of the specified format were found in the directory.'
+        else : yield 'Info: %d files were found in the directory.' % file_count
 
 
     def add_file(self, path: str):
@@ -97,231 +84,232 @@ class LoaderClient:
             file_type = 2		# Video
         else: 
             file_type = 3		# Other
-        request = dataloader_pb2.AddMediaRequest(media={
+        request = rpc_objects.CreateMediaRequest(media={
             "file_uri": file_path,
             "file_type": file_type,
             "thumbnail_uri": file_path
             })
         
-        response = self.grpc_stub.addMedia(request)
-        if response.success:
-            return response.media
-        else:
-            return {'Error': 'failed to add 1 batch of medias to database.'}
+        response = self.grpc_stub.createMedia(request)
+        return response.error_message if response.error_message \
+        else response.media
 
 
     # Delete a single media with the given ID
     def delete(self, id: int):
-        request = dataloader_pb2.IdRequest(id=id)
+        request = rpc_objects.IdRequest(id=id)
         response = self.grpc_stub.deleteMedia(request)
-        if response.success:
-            return {'Success': 'media removed from database.'}
-        else:
-            return {'Error': 'could not remove media from database'}
+        return response.error_message if response.error_message \
+        else 'Success, media removed from database.'
 
 
     #!================ Tagset functions ======================================================================
 
-    def listall_tagsets(self):
-        request = dataloader_pb2.EmptyRequest()
+    def listall_tagsets(self, tagtype_id: int):
+        if tagtype_id > 0: request = rpc_objects.GetTagSetsRequest(tagTypeId=tagtype_id)
+        else : request = rpc_objects.GetTagSetsRequest()
         response_iterator = self.grpc_stub.getTagSets(request)
         for response in response_iterator:
-            if response.success:
-                yield response.tagset
-            else:
-                yield {'Error': 'Request failed.'}
+            yield response.error_message if response.error_message \
+            else response.tagset
 
     def add_tagset(self, name: str, tagtype_id: int):
-        request = dataloader_pb2.CreateTagSetRequest(name=name, tagTypeId=tagtype_id)
+        request = rpc_objects.CreateTagSetRequest(name=name, tagTypeId=tagtype_id)
         response = self.grpc_stub.createTagSet(request)
-        if response.success:
-            return response.tagset
-        else:
-            return {'Error': 'could not create tagset.'}
+        return response.error_message if response.error_message \
+        else response.tagset
     
     def get_tagset_by_id(self, id: int):
-        request = dataloader_pb2.IdRequest(id=id)
+        request = rpc_objects.IdRequest(id=id)
         response = self.grpc_stub.getTagSetById(request)
-        if response.success :
-            return response.tagset
-        else:
-            return {'Error': 'could not find tagset with the given ID.'}
+        return response.error_message if response.error_message \
+        else response.tagset
     
     def get_tagset_by_name(self, name: str):
-        request = dataloader_pb2.GetTagSetRequestByName(name=name)
+        request = rpc_objects.GetTagSetRequestByName(name=name)
         response = self.grpc_stub.getTagSetByName(request)
-        if response.success :
-            return response.tagset
-        else:
-            return {'Error': 'could not find tagset with the given name.'}
+        return response.error_message if response.error_message \
+        else response.tagset
         
     #!================ Tag functions ======================================================================
     
-    def listall_tags(self):
-        request = dataloader_pb2.EmptyRequest()
+    def listall_tags(self, tagtype_id: int, tagset_id: int):
+        if tagtype_id > 0 and tagset_id > 0:
+            request = rpc_objects.GetTagsRequest(
+                tagTypeId=tagtype_id,
+                tagSetId=tagset_id
+            )
+        elif tagtype_id > 0:
+            request = rpc_objects.GetTagsRequest(
+                tagTypeId=tagtype_id
+            )
+        elif tagset_id > 0:
+            request = rpc_objects.GetTagsRequest(
+                tagSetId=tagset_id
+            )
+        else:
+            request = rpc_objects.GetTagsRequest()
+            
         response_iterator = self.grpc_stub.getTags(request)
         for response in response_iterator:
-            if response.success:
-                yield response.tag
-            else:
-                yield {'Error': 'Request failed.'}
+            yield response.error_message if response.error_message \
+            else response.tag
 
     def add_tag(self, tagset_id: int, tagtype_id: int, value):
         match tagtype_id:
             case 1: 
-                request = dataloader_pb2.CreateTagRequest(
+                request = rpc_objects.CreateTagRequest(
                     tagSetId=tagset_id, 
                     tagTypeId=tagtype_id,
-                    alphanumerical = dataloader_pb2.AlphanumericalValue(value=value)
+                    alphanumerical = rpc_objects.AlphanumericalValue(value=value)
                 )
             case 2: 
                 value = value.replace('/', ' ')
-                request = dataloader_pb2.CreateTagRequest(
+                request = rpc_objects.CreateTagRequest(
                     tagSetId=tagset_id, 
                     tagTypeId=tagtype_id,
-                    timestamp = dataloader_pb2.TimeStampValue(value=value)
+                    timestamp = rpc_objects.TimeStampValue(value=value)
                 )
             case 3: 
-                request = dataloader_pb2.CreateTagRequest(
+                request = rpc_objects.CreateTagRequest(
                     tagSetId=tagset_id, 
                     tagTypeId=tagtype_id,
-                    time = dataloader_pb2.TimeValue(value=value)
+                    time = rpc_objects.TimeValue(value=value)
                 )
             case 4: 
-                request = dataloader_pb2.CreateTagRequest(
+                request = rpc_objects.CreateTagRequest(
                     tagSetId=tagset_id, 
                     tagTypeId=tagtype_id,
-                    date = dataloader_pb2.DateValue(value=value)
+                    date = rpc_objects.DateValue(value=value)
                 )
             case 5: 
-                request = dataloader_pb2.CreateTagRequest(
+                request = rpc_objects.CreateTagRequest(
                     tagSetId=tagset_id, 
                     tagTypeId=tagtype_id,
-                    numerical = dataloader_pb2.NumericalValue(value=int(value))
+                    numerical = rpc_objects.NumericalValue(value=int(value))
                 )
             case _:
-                return {'Error': 'Not a valid tag type: range is 1-5'}
+                return 'Error : Not a valid tag type. Range is [1:5]'
             
         response = self.grpc_stub.createOrGetTag(request)
-        if response.success:
-            return response.tag
-        else:
-            return {'Error': 'could not create tag'}
+        return response.error_message if response.error_message \
+        else response.tag
     
     def get_tag(self, id: int):
-        request = dataloader_pb2.IdRequest(id=id)
+        request = rpc_objects.IdRequest(id=id)
         response = self.grpc_stub.getTag(request)
-        if response.success :
-            return response.tag
-        else:
-            return {'Error': 'could not find tag with given ID'}
+        return response.error_message if response.error_message \
+        else response.tag
 
     #!================ Tagging functions ======================================================================
+    def listall_taggings(self):
+        request = rpc_objects.EmptyRequest()
+        response_iterator = self.grpc_stub.getTaggings(request)
+        for response in response_iterator:
+            yield response.error_message if response.error_message \
+            else response.tagging
+
+    def add_tagging(self, tag_id: int, media_id: int):
+        request = rpc_objects.CreateTaggingRequest(
+            tagId=tag_id,
+            mediaId=media_id
+        )
+        response = self.grpc_stub.createTagging(request)
+        return response.error_message if response.error_message \
+        else response.tagging
+    
+
+    def get_medias_with_tag(self, id: int):
+        request = rpc_objects.IdRequest(id=id)
+        response_iterator = self.grpc_stub.getMediasWithTag(request)
+        for response in response_iterator:
+            yield response.error_message if response.error_message \
+            else response.id
+
+    def get_media_tags(self, id: int):
+        request = rpc_objects.IdRequest(id=id)
+        response_iterator = self.grpc_stub.getMediaTags(request)
+        for response in response_iterator:
+            yield response.error_message if response.error_message \
+            else response.id
+
+#!================ Hierarchy functions ====================================================================
+
+    def listall_hierarchies(self):
+        request = rpc_objects.EmptyRequest()
+        response_iterator = self.grpc_stub.getHierarchies(request)
+        for response in response_iterator:
+            yield response.error_message if response.error_message \
+            else response.hierarchy
+
+    def add_hierarchy(self, name: str, tagset_id: int):
+        request = rpc_objects.CreateHierarchyRequest(
+            name=name,
+            tagsetId=tagset_id
+        )
+        response = self.grpc_stub.createHierarchy(request)
+        return response.error_message if response.error_message \
+        else response.hierarchy
+    
+
+    def get_hierarchy(self, id: int):
+        request = rpc_objects.IdRequest(id=id)
+        response = self.grpc_stub.getHierarchy(request)
+        return response.error_message if response.error_message \
+        else response.hierarchy
+
+
+
+    #!================ Node functions ======================================================================
 
     def add_node(self, tag_id: int, hierarchy_id: int, parentnode_id: int):
-        request = dataloader_pb2.CreateNodeRequest(
+        request = rpc_objects.CreateNodeRequest(
             tagId=tag_id,
             hierarchyId=hierarchy_id,
             parentNodeId=parentnode_id
         )
         response = self.grpc_stub.createNode(request)
-        if response.success:
-            return response.node
-        else:
-            return {'Error': 'could not create tagset'}
+        return response.error_message if response.error_message \
+        else response.node
+
+        
+
+    def add_rootnode(self, tag_id: int, hierarchy_id: int):
+        request = rpc_objects.CreateNodeRequest(
+            tagId=tag_id,
+            hierarchyId=hierarchy_id
+        )
+        response = self.grpc_stub.createNode(request)
+        return response.error_message if response.error_message \
+        else response.node
+        
         
     def get_node(self, id: int):
-        request = dataloader_pb2.IdRequest(id=id)
+        request = rpc_objects.IdRequest(id=id)
         response = self.grpc_stub.getNode(request)
-        if response.success:
-            return response.node
-        else:
-            return {'Error': 'could not find node with given ID'}
+        return response.error_message if response.error_message \
+        else response.node
     
-
-
-#!================ Hierarchy functions ====================================================================
-
-    def listall_hierarchies(self):
-        request = dataloader_pb2.EmptyRequest()
-        response_iterator = self.grpc_stub.getHierarchies(request)
+    def get_nodes_of_hierarchy(self, hierarchy_id: int):
+        request = rpc_objects.IdRequest(id=hierarchy_id)
+        response_iterator = self.grpc_stub.getNodesOfHierarchy(request)
         for response in response_iterator:
-            if response.success:
-                yield response.hierarchy
-            else:
-                yield {'Error': 'Request failed.'}
-
-    def add_hierarchy(self, name: str, tagset_id: int, rootnode_id: int):
-        request = dataloader_pb2.CreateHierarchyRequest(
-            name=name,
-            tagsetId=tagset_id,
-            rootNodeId=rootnode_id
-        )
-        response = self.grpc_stub.createHierarchy(request)
-        if response.success:
-            return response.hierarchy
-        else:
-            return {'Error': 'could not create tagset'}
+            yield response.error_message if response.error_message \
+            else response.node
     
-
-    def get_hierarchy(self, id: int):
-        request = dataloader_pb2.IdRequest(id=id)
-        response = self.grpc_stub.getHierarchy(request)
-        if response.success:
-            yield response.id
-        else:
-            yield {'Error': 'could not retrieve medias with the given tag_id'}
-
-
-    #!================ Node functions ======================================================================
-
-    def listall_taggings(self):
-        request = dataloader_pb2.EmptyRequest()
-        response_iterator = self.grpc_stub.getTaggings(request)
+    def get_child_nodes(self, id: int):
+        request = rpc_objects.IdRequest(id=id)
+        response_iterator = self.grpc_stub.getChildNodes(request)
         for response in response_iterator:
-            if response.success:
-                yield response.tagging
-            else:
-                yield {'Error': 'Request failed.'}
+            yield response.error_message if response.error_message \
+            else response.node
 
-    def add_tagging(self, tag_id: int, media_id: int):
-        request = dataloader_pb2.CreateTaggingRequest(
-            tagId=tag_id,
-            mediaId=media_id
-        )
-        response = self.grpc_stub.createTagging(request)
-        if response.success:
-            return response.tagging
-        else:
-            return {'Error': 'could not create tagset'}
     
-
-    def get_medias_with_tag(self, id: int):
-        request = dataloader_pb2.IdRequest(id=id)
-        response_iterator = self.grpc_stub.getMediasWithTag(request)
-        for response in response_iterator:
-            if response.success:
-                yield response.id
-            else:
-                yield {'Error': 'could not retrieve medias with the given tag_id'}
-
-    def get_media_tags(self, id: int):
-        request = dataloader_pb2.IdRequest(id=id)
-        response_iterator = self.grpc_stub.getMediaTags(request)
-        for response in response_iterator:
-            if response.success:
-                yield response.id
-            else:
-                yield {'Error': 'could not retrieve tags with the given media_id'}
-
-
     #!================ DB management ======================================================================
 
     # Reset the database
-    def reset(self, ctx):
-        request = dataloader_pb2.EmptyRequest()
+    def reset(self):
+        request = rpc_objects.EmptyRequest()
         response = self.grpc_stub.resetDatabase(request)
-        if response.success:
-            return {'Success': 'database was successfully reset.'}
-        else:
-            return {'Error': 'could not reset database'}
+        return response.error_message if response.error_message \
+        else 'Success, database was successfully reset.'

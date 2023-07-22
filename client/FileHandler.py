@@ -108,7 +108,7 @@ def exportJSON(path):
     tagsets = []
     medias = []
 
-    response_tagsets = client.listall_tagsets()
+    response_tagsets = client.listall_tagsets(-1)
     for tagset_response in response_tagsets:
         tagsets.append(
             {"name": tagset_response.name,      # type: ignore
@@ -153,7 +153,7 @@ def exportCSV(path):
 
     # Prepare the header line with tagset names and types
     header = []
-    response_tagsets = client.listall_tagsets()
+    response_tagsets = client.listall_tagsets(-1)
     for tagset_response in response_tagsets:
         header.extend([f"\"{tagset_response.name}\"", f"{tagset_response.tagTypeId}"]) # type: ignore
         

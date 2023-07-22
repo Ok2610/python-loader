@@ -14,15 +14,15 @@ def test_cli():
 
     # Test 'get all tagsets' with empty DB
     result = runner.invoke(cli, ['get', 'tagsets'])
-    assert result.output.strip() == ""
+    assert result.output.strip() == "No results were fetched."
     
     # Test 'get tagset with id=1' with empty DB
     result = runner.invoke(cli, ['get', 'tagset', '-i', '1'])
-    assert result.output.strip() == "{'Error': 'could not find tagset with the given ID.'}"
+    assert result.output.strip() == "No results were fetched."
 
     # Test 'get tagset with name=Location' with empty DB
     result = runner.invoke(cli, ['get', 'tagset', '-n', 'Location'])
-    assert result.output.strip() == "{'Error': 'could not find tagset with the given name.'}"
+    assert result.output.strip() == "No results were fetched."
 
     # Test 'add tagset' type=default (Alphanumerical), name=Location
     result = runner.invoke(cli, ['add', 'tagset', 'Location'])
@@ -58,6 +58,16 @@ tagTypeId: 5"""
 name: "Resolution"
 tagTypeId: 5"""
 
+    # Test duplicate names with different types
+    result = runner.invoke(cli, ['add', 'tagset', 'Resolution', '1'])
+    assert result.output.strip() == "Error: Tagset name 'Resolution' already exists with a different type."
+
+    # Test duplicate names with same types
+    result = runner.invoke(cli, ['add', 'tagset', 'Resolution', '5'])
+    assert result.output.strip() == """id: 2
+name: "Resolution"
+tagTypeId: 5"""
+    
 
 if __name__ == '__main__':
     test_cli()

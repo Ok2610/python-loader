@@ -2,13 +2,8 @@ from __future__ import print_function
 
 import click
 import os
-from pprint import pformat
 import re
 import datetime
-
-import grpc
-import dataloader_pb2
-import dataloader_pb2_grpc
 
 from grpc_client import LoaderClient
 import FileHandler
@@ -18,57 +13,41 @@ client = LoaderClient(grpc_host='localhost', grpc_port='50051')
 
 SERVER_ADDRESS = "localhost:50051"
 
-
 @click.group()
-@click.option("--debug","-d", is_flag=True, help="Enable debug mode.")
-@click.pass_context
-def cli(ctx, debug):
-    ctx.ensure_object(dict)
-    ctx.obj["DEBUG"] = debug
+def cli():
+    """CLI interface to interact with the M3 database. From this interface you can access and add Medias, Tagsets, Tags, Taggings, Nodes and Hierarchies."""
+    pass
 
 #!================ GET functions ======================================================================
 
 @cli.group()
-@click.pass_context
-def get(ctx):
+def get():
     """Retrieve stored information from the model"""
     pass
 
 
 @get.command()
 @click.argument("id", type=int)
-@click.pass_context
-def media(ctx, id): # type: ignore
+def media(id): # type: ignore
     """Get a single media with the given ID"""
-    if ctx.obj["DEBUG"]:
-        click.echo(f"DEBUG: Getting media with ID: {id}")
-
     if id > 0:
         response = client.get_media(id)
         click.echo(response)
     else:
-        click.echo("ERROR: index must be > 0")
+        click.echo("Error: index must be > 0")
 
 
 @get.command()
 @click.argument("file_uri", type=str)
-@click.pass_context
-def media_from_uri(ctx, file_uri):
+def media_from_uri(file_uri):
     """Get a an object ID using its URI"""
-    if ctx.obj["DEBUG"]:
-        click.echo(f"DEBUG: Getting media with ID: {id}")
-
     response = client.get_id(file_uri)
     click.echo(response)
 
 
 @get.command()
-@click.pass_context
-def medias(ctx): # type: ignore
+def medias(): # type: ignore
     """List all the medias stored"""
-    if ctx.obj["DEBUG"]:
-        click.echo("DEBUG: Getting all medias")
-
     response_iterator = client.listall_medias()
     for response in response_iterator:
         click.echo(response)
@@ -89,84 +68,120 @@ def tagset(tagset_id, tagset_name): # type: ignore
 
 
 @get.command()
-@click.pass_context
-def tagsets(ctx): # type: ignore
+@click.option("-t", "--type", "tagtype_id", type=int, default=-1, help="Tag type filter (default: all).")
+def tagsets(tagtype_id): # type: ignore
     """List all existent tagsets"""
-    response_iterator = client.listall_tagsets()
+    response_iterator = client.listall_tagsets(tagtype_id)
     for response in response_iterator:
         click.echo(response)
 
 
 @get.command()
 @click.argument("id", type=int)
-@click.pass_context
-def tag(ctx, id): # type: ignore
+def tag(id): # type: ignore
     """Get a single tag with the given ID"""
-    if ctx.obj["DEBUG"]:
-        click.echo(f"DEBUG: Getting tag with ID: {id}")
     if id > 0:
         response = client.get_tag(id)
         click.echo(response)
     else:
-        click.echo("ERROR: index must be > 0")
+        click.echo("Error: index must be > 0")
 
 
 @get.command()
-@click.pass_context
-def tags(ctx): # type: ignore
+@click.option("-tp", "--type", "tagtype_id", type=int, default=-1, help="Tag type filter (default: all).")
+@click.option("-ts", "--tagset", "tagset_id", type=int, default=-1, help="Tagset filter (default: all).")
+def tags(tagtype_id, tagset_id): # type: ignore
     """List all existent tags"""
-    response_iterator = client.listall_tags()
+    response_iterator = client.listall_tags(tagtype_id=tagtype_id, tagset_id=tagset_id)
     for response in response_iterator:
         click.echo(response)
 
 
 @get.command()
 @click.argument("tag_id", type=int)
-@click.pass_context
-def medias_with_tag(ctx, tag_id): # type: ignore
+def medias_with_tag(tag_id): # type: ignore
     """List the medias with the specified tag"""
     if tag_id > 0:
         response_iterator = client.get_medias_with_tag(tag_id)
         for response in response_iterator:
             click.echo(response)
     else:
-        click.echo("ERROR: index must be > 0")
+        click.echo("Error: index must be > 0")
 
 
 @get.command()
 @click.argument("media_id", type=int)
-@click.pass_context
-def tags_of_media(ctx, media_id): # type: ignore
+def tags_of_media(media_id): # type: ignore
     """List the tags of a given media"""
     if media_id > 0:
         response_iterator = client.get_media_tags(media_id)
         for response in response_iterator:
             click.echo(response)
     else:
-        click.echo("ERROR: index must be > 0")
+        click.echo("Error: index must be > 0")
 
 
 @get.command()
-@click.pass_context
-def taggings(ctx):
+def taggings():
     """List all existent taggings"""
     response_iterator = client.listall_taggings()
     for response in response_iterator:
         click.echo(response)
+@get.command()
+@click.argument("id", type=int)
+def hierarchy(id): # type: ignore
+    """Get a single hierarchy with the given ID"""
+    if id > 0:
+        response = client.get_hierarchy(id)
+        click.echo(response)
+    else:
+        click.echo("Error: index must be > 0")
 
+@get.command()
+def hierarchies():
+    """List all existent hierarchies"""
+    response_iterator = client.listall_hierarchies()
+    for response in response_iterator:
+        click.echo(response)
+
+
+@get.command()
+@click.argument("id", type=int)
+def node(id): # type: ignore
+    """Get a single node with the given ID"""
+    if id > 0:
+        response = client.get_node(id)
+        click.echo(response)
+    else:
+        click.echo("Error: index must be > 0")
+
+
+@get.command()
+@click.argument("node_id", type=int)
+def child_nodes(node_id):
+    """List the child nodes of a selected node"""
+    response_iterator = client.get_child_nodes(node_id)
+    for response in response_iterator:
+        click.echo(response)
+
+@get.command()
+@click.argument("hierarchy_id", type=int)
+def nodes_of_hierarchy(hierarchy_id):
+    """List all the nodes of a selected hierarchy"""
+    response_iterator = client.get_nodes_of_hierarchy(hierarchy_id)
+    for response in response_iterator:
+        click.echo(response)
 
 #!================ ADD functions ======================================================================
 
 
 @cli.group()
-@click.pass_context
-def add(ctx):
+def add():
     """Add elements to the database model"""
     pass
 
 
 @add.command()
-@click.pass_context
 @click.argument("path", type=click.Path(exists=True))
 @click.option(
     "--formats",
@@ -175,11 +190,8 @@ def add(ctx):
     default=["jpg", "png", "bmp", "mp3", "wav", "flac", "mp4", "avi"],
     help="File formats to include (default: jpg, png, bmp, mp3, wav, flac, mp4, avi)",
 )
-def media(ctx, path, formats): # type: ignore
+def media(path, formats): # type: ignore
     """Add a file or multiple files from a specified directory to the database."""
-    if ctx.obj["DEBUG"]:
-        click.echo("DEBUG: Adding files from directory.")
-
     if os.path.isdir(path):
         response_iterator = client.add_dir(path, formats)
         for response in response_iterator:
@@ -194,8 +206,7 @@ def media(ctx, path, formats): # type: ignore
 @add.command()
 @click.argument("name", type=str)
 @click.argument("type", type=int, default=1, required=False)
-@click.pass_context
-def tagset(ctx, name, type): # type: ignore
+def tagset(name, type): # type: ignore
     """Create a new tagset with specified [name] and [type] (default = 1 - AlphaNumerical)
     Supported types are 1 - Alphanumerical, 2 - Timestamp, 3 - Time, 4 - Date, 5 - Numerical."""
     if type not in range(1,6):
@@ -232,8 +243,7 @@ def validate_format(ctx, param, value):
 @click.argument("tagset_id", type=int)
 @click.argument("type_id", type=int)
 @click.argument("value", callback=validate_format)
-@click.pass_context
-def tag(ctx, tagset_id, type_id, value): # type: ignore
+def tag(tagset_id, type_id, value): # type: ignore
     """Create a new tag with specified value. Based on the type, formats are as follows:\n
 1 - Alphanumerical: any\n\n2 - Timestamp: YYYY-MM-dd/hh:mm:ss\n\n3 - Time: hh:mm:ss\n\n4 - Date: YYYY-MM-dd\n\n5 - Numerical: integer"""
     response = client.add_tag(tagset_id, type_id, value)
@@ -244,30 +254,47 @@ def tag(ctx, tagset_id, type_id, value): # type: ignore
 @add.command()
 @click.argument("media_id", type=int)
 @click.argument("tag_id", type=int)
-@click.pass_context
-def tagging(ctx, tag_id, media_id): #type: ignore
+def tagging(tag_id, media_id): #type: ignore
     """Create a tagging between Media ID and Tag ID"""
-    if ctx.obj["DEBUG"]:
-        click.echo(f"DEBUG: Attributing tag {tag_id} to media {media_id}")
     response = client.add_tagging(tag_id, media_id)
     click.echo(response)
 
+@add.command()
+@click.argument("name", type=str)
+@click.argument("tagset_id", type=int)
+def hierarchy(name, tagset_id): #type: ignore
+    """Create an empty hierarchy with given name and tagset_id"""
+    response = client.add_hierarchy(name, tagset_id)
+    click.echo(response)
+
+@add.command()
+@click.argument("tag_id", type=int)
+@click.argument("hierarchy_id", type=int)
+@click.argument("parentnode_id", type=int)
+def node(tag_id, hierarchy_id, parentnode_id): #type: ignore
+    """Create a hierarchy with given name, tagset_id and rootnode_id"""
+    response = client.add_node(tag_id, hierarchy_id, parentnode_id)
+    click.echo(response)
+
+@add.command()
+@click.argument("tag_id", type=int)
+@click.argument("hierarchy_id", type=int)
+def rootnode(tag_id, hierarchy_id): #type: ignore
+    """Create rootnode for given hierarchy"""
+    response = client.add_rootnode(tag_id, hierarchy_id)
+    click.echo(response)
 
 #!================ DELETE functions ======================================================================
 
 @cli.group()
-@click.pass_context
-def delete(ctx):
+def delete():
     """Delete elements from database"""
     pass
 
 @delete.command()
 @click.argument("id", type=int)
-@click.pass_context
-def media(ctx, id):
+def media(id):
     """Delete a single media with the given ID"""
-    if ctx.obj["DEBUG"]:
-            click.echo(f"DEBUG: Deleting media with ID: {id}")
     if id > 0:
         response = client.delete(id)
         click.echo(response)
@@ -285,8 +312,7 @@ def media(ctx, id):
     help="Format of the import file. Currently supported formats: json, csv.",
 )
 @click.argument("path", type=click.Path(exists=True))
-@click.pass_context
-def import_command(ctx, format, path):
+def import_command(format, path):
     """Add tagsets, objects and tags from a setup file in the selected format."""
     if os.path.isfile(path) & path.lower().endswith(format):
         if format == "json":
@@ -309,8 +335,7 @@ def import_command(ctx, format, path):
     help="Format of the import file. Currently supported formats: json.",
 )
 @click.argument("path", type=click.Path())
-@click.pass_context
-def export_command(ctx, format, path):
+def export_command(format, path):
     """Export the current collection configuration to a file in specified format (default: json)."""
     if os.path.isdir(path):
         # Generate the file name automatically
@@ -337,24 +362,13 @@ def export_command(ctx, format, path):
 
 
 @cli.command()
-@click.pass_context
-def reset(ctx):
+def reset():
     """Reset the database"""
     if click.confirm(
         "Do you want to reset the database ? All data will be lost.", default=False
     ):
-        if ctx.obj["DEBUG"]:
-            click.echo(f"DEBUG: Resetting database...")
-        with grpc.insecure_channel(SERVER_ADDRESS) as channel:
-            stub = dataloader_pb2_grpc.DataLoaderStub(channel)
-            request = dataloader_pb2.EmptyRequest()
-            response = stub.resetDatabase(request)
-            if response.success:
-                click.echo("Database was successfully reset.")
-            else:
-                click.echo("Error: could not reset database.")
-    else:
-        click.echo("Operation cancelled.")
+        response = client.reset()
+        click.echo(response)
 
 
 

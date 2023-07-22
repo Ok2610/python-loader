@@ -14,11 +14,11 @@ def test_cli():
 
     # Test 'get all medias' with empty DB
     result = runner.invoke(cli, ['get', 'medias'])
-    assert result.output.strip() == ""
+    assert result.output.strip() == "No results were fetched."
     
     # Test 'get 1 media' with empty DB
     result = runner.invoke(cli, ['get', 'media', '1'])
-    assert result.output.strip() == "{'Error': 'Could not find media with the given ID'}"
+    assert result.output.strip() == "No results were fetched."
 
     # Test 'add directory'
     result = runner.invoke(cli, ['add', 'media', './testfiles'])
@@ -26,11 +26,11 @@ def test_cli():
 
     # Test 'add directory' with format filter
     result = runner.invoke(cli, ['add', 'media', './testfiles', '-f', 'mp3'])
-    assert result.output.strip() == "{'Success': 'added 2 medias to database.'}\n{'Info': '2 files were found in the directory.'}"
+    assert result.output.strip() == "Info: added 2 medias to database.\nInfo: 2 files were found in the directory."
     
     # Test 'add directory' with format filter, no files found
     result = runner.invoke(cli, ['add', 'media', './testfiles', '-f', 'gpx'])
-    assert result.output.strip() == "{'Info': '0 files were found in the directory.'}"
+    assert result.output.strip() == "Info: no files of the specified format were found in the directory."
 
     # Test 'add single file'
     result = runner.invoke(cli, ['add', 'media', './testfiles/random.gif'])
@@ -44,7 +44,7 @@ def test_cli():
 
     # Test 'get media' with unexistant ID
     result = runner.invoke(cli, ['get', 'media', '888'])
-    assert result.output.strip() == "{'Error': 'Could not find media with the given ID'}"
+    assert result.output.strip() == "No results were fetched."
 
     # Test 'get media' with ID 1
     result = runner.invoke(cli, ['get', 'media', '857'])
