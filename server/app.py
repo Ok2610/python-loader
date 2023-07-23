@@ -300,16 +300,15 @@ VALUES
 
             sql = "INSERT INTO public.tagsets (name, tagtype_id) VALUES ('%s', %d) RETURNING *;" % (request.name, request.tagTypeId)
             self.cursor.execute(sql)
-            inserted_tagset = self.cursor.fetchall()[0]
-            response = rpc_objects.TagSetResponse(
+            inserted_tagset = self.cursor.fetchall()[0] 
+            self.conn.commit()
+            return rpc_objects.TagSetResponse(
                 tagset=rpc_objects.TagSet(
                     id= inserted_tagset['id'],
                     name= inserted_tagset['name'],
                     tagTypeId= inserted_tagset['tagtype_id']
                 )
             )
-            self.conn.commit()
-            return response
         
         except Exception as e:
             print("[%s] -> %s" % (thread_id, str(e)))
@@ -694,19 +693,31 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
     def createTagging(self, request: rpc_objects.CreateTaggingRequest, context) -> rpc_objects.TaggingResponse:
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received createTagging request with media_id=%d and tag_id=%d" % (thread_id, request.mediaId, request.tagId))
-        sql = ("INSERT INTO public.objecttagrelations (object_id, tag_id) VALUES (%d, %d) RETURNING *;" 
-               % (request.mediaId, request.tagId))
         try:
+            sql = ("SELECT * FROM public.objecttagrelations WHERE object_id = %s AND tag_id = %s"
+                   % (request.mediaId, request.tagId))
             self.cursor.execute(sql)
-            inserted_tagging = self.cursor.fetchall()[0]
-            response = rpc_objects.TaggingResponse(
+            if self.cursor.rowcount > 0: 
+                print("[%s] -> Tagging already present in database, returning value to client." % thread_id)
+                existing_tagging = self.cursor.fetchall()[0]
+                return rpc_objects.TaggingResponse(
                 tagging = rpc_objects.Tagging(
-                    mediaId=inserted_tagging['object_id'],
-                    tagId=inserted_tagging['tag_id']
+                    mediaId=existing_tagging['object_id'],
+                    tagId=existing_tagging['tag_id']
                 )
             )
-            self.conn.commit()
-            return response
+            else:
+                sql = ("INSERT INTO public.objecttagrelations (object_id, tag_id) VALUES (%d, %d) RETURNING *;" 
+                % (request.mediaId, request.tagId))
+                self.cursor.execute(sql)
+                inserted_tagging = self.cursor.fetchall()[0]
+                self.conn.commit()
+                return rpc_objects.TaggingResponse(
+                    tagging = rpc_objects.Tagging(
+                        mediaId=inserted_tagging['object_id'],
+                        tagId=inserted_tagging['tag_id']
+                    )
+                )
         except Exception as e:
             print("[%s] -> %s" % (thread_id, str(e)))
             return rpc_objects.TaggingResponse(error_message=str(e))
@@ -808,7 +819,6 @@ VALUES ('%s', %d) RETURNING *;""" % (
         print("[%s] Received getNodes request" % (thread_id))
         try:
             sql = "SELECT * FROM public.nodes"
-            #  TODO: implement this in a smart way 
             # Reflexion: a node is a tag reference in a hierarchy, 
             # so if more than one filter is applied we'll get only one result
             if request.hierarchyId > 0 or request.tagId > 0 or request.parentNodeId > 0:
