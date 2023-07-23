@@ -1,21 +1,17 @@
 import os
-import json
 
 import grpc
 import dataloader_pb2 as rpc_objects
-from dataloader_pb2_grpc import DataLoaderStub
-
-from google.protobuf.json_format import MessageToJson
-
+import dataloader_pb2_grpc
 
 class LoaderClient:
     def __init__(self, grpc_host='localhost', grpc_port='50051') -> None:
         self.grpc_channel = grpc.insecure_channel('%s:%s' % (grpc_host, grpc_port))
-        self.grpc_stub = DataLoaderStub(self.grpc_channel)
+        self.grpc_stub = dataloader_pb2_grpc.DataLoaderStub(self.grpc_channel)
 
     #!================ Media/media functions ======================================================================
 
-    def get_media(self, id: int):
+    def get_media_by_id(self, id: int):
     # Get a single media with the given ID
         request = rpc_objects.IdRequest(id=id)
         response = self.grpc_stub.getMediaById(request)
@@ -23,17 +19,20 @@ class LoaderClient:
         else response.media
 
     
-    def get_id(self, file_uri: str):
+    def get_media_by_uri(self, file_uri: str):
     # Get a an media ID using its URI
-        request = rpc_objects.GetMediaIdFromURIRequest(uri=file_uri)
-        response = self.grpc_stub.getMediaIdFromURI(request)
+        request = rpc_objects.GetMediaByURIRequest(file_uri=file_uri)
+        response = self.grpc_stub.getMediaByURI(request)
         return response.error_message if response.error_message \
-        else response.id
+        else response.media
 
 
-    def listall_medias(self):
-    # List all the medias stored
-        request = rpc_objects.EmptyRequest()
+    def get_medias(self, file_type: int):
+        # List all the medias stored with an optional filter on the file type
+        if file_type > 0:
+            request = rpc_objects.GetMediasRequest(file_type=file_type)
+        else :
+            request = rpc_objects.GetMediasRequest()
         response_iterator = self.grpc_stub.getMedias(request)
         for response in response_iterator:
             yield response.error_message if response.error_message \
@@ -49,13 +48,13 @@ class LoaderClient:
                 if any(file.endswith('.' + ext) for ext in formats):
                     file_path = os.path.abspath(os.path.join(directory, file))
                     if file.lower().endswith(('jpg', 'png', 'bmp')):
-                        file_type = 0		# Image
+                        file_type = 1	    # Image
                     elif file.lower().endswith(('mp3', 'wav', 'flac')):
-                        file_type = 1		# Audio
+                        file_type = 2		# Audio
                     elif file.lower().endswith(('mp4', 'avi')):
-                        file_type = 2		# Video
+                        file_type = 3		# Video
                     else: 
-                        file_type = 3		# Other
+                        file_type = 4		# Other
                     file_count += 1
                     request = rpc_objects.CreateMediaRequest(media={
                         "file_uri": file_path,
@@ -77,13 +76,13 @@ class LoaderClient:
     # Add a specific file to the database.
         file_path = os.path.abspath(path)
         if path.lower().endswith(('jpg', 'png', 'bmp')):
-            file_type = 0		# Image
+            file_type = 1		# Image
         elif path.lower().endswith(('mp3', 'wav', 'flac')):
-            file_type = 1		# Audio
+            file_type = 2		# Audio
         elif path.lower().endswith(('mp4', 'avi')):
-            file_type = 2		# Video
+            file_type = 3		# Video
         else: 
-            file_type = 3		# Other
+            file_type = 4		# Other
         request = rpc_objects.CreateMediaRequest(media={
             "file_uri": file_path,
             "file_type": file_type,
@@ -105,7 +104,7 @@ class LoaderClient:
 
     #!================ Tagset functions ======================================================================
 
-    def listall_tagsets(self, tagtype_id: int):
+    def get_tagsets(self, tagtype_id: int):
         if tagtype_id > 0: request = rpc_objects.GetTagSetsRequest(tagTypeId=tagtype_id)
         else : request = rpc_objects.GetTagSetsRequest()
         response_iterator = self.grpc_stub.getTagSets(request)
@@ -133,7 +132,7 @@ class LoaderClient:
         
     #!================ Tag functions ======================================================================
     
-    def listall_tags(self, tagtype_id: int, tagset_id: int):
+    def get_tags(self, tagtype_id: int, tagset_id: int):
         if tagtype_id > 0 and tagset_id > 0:
             request = rpc_objects.GetTagsRequest(
                 tagTypeId=tagtype_id,
@@ -191,7 +190,7 @@ class LoaderClient:
             case _:
                 return 'Error : Not a valid tag type. Range is [1:5]'
             
-        response = self.grpc_stub.createOrGetTag(request)
+        response = self.grpc_stub.createTag(request)
         return response.error_message if response.error_message \
         else response.tag
     
@@ -202,7 +201,7 @@ class LoaderClient:
         else response.tag
 
     #!================ Tagging functions ======================================================================
-    def listall_taggings(self):
+    def get_taggings(self):
         request = rpc_objects.EmptyRequest()
         response_iterator = self.grpc_stub.getTaggings(request)
         for response in response_iterator:
@@ -235,8 +234,11 @@ class LoaderClient:
 
 #!================ Hierarchy functions ====================================================================
 
-    def listall_hierarchies(self):
-        request = rpc_objects.EmptyRequest()
+    def get_hierarchies(self, tagset_id: int):
+        if tagset_id > 0:
+            request = rpc_objects.GetHierarchiesRequest(tagsetId=tagset_id)
+        else: 
+            request = rpc_objects.GetHierarchiesRequest()
         response_iterator = self.grpc_stub.getHierarchies(request)
         for response in response_iterator:
             yield response.error_message if response.error_message \
@@ -290,9 +292,9 @@ class LoaderClient:
         return response.error_message if response.error_message \
         else response.node
     
-    def get_nodes_of_hierarchy(self, hierarchy_id: int):
-        request = rpc_objects.IdRequest(id=hierarchy_id)
-        response_iterator = self.grpc_stub.getNodesOfHierarchy(request)
+    def get_nodes(self, hierarchy_id: int = 0, tag_id: int = 0, parentnode_id: int = 0):
+        request = rpc_objects.GetNodesRequest(hierarchyId=hierarchy_id, tagId=tag_id, parentNodeId=parentnode_id)
+        response_iterator = self.grpc_stub.getNodes(request)
         for response in response_iterator:
             yield response.error_message if response.error_message \
             else response.node

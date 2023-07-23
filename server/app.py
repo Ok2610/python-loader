@@ -61,12 +61,36 @@ class DataLoader(DataLoaderServicer):
             return rpc_objects.MediaResponse(error_message=str(e))
 
 
-    def getMedias(self, request: rpc_objects.EmptyRequest, context):
+    def getMediaByURI(self, request: rpc_objects.GetMediaByURIRequest, context) -> rpc_objects.MediaResponse:
+        thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
+        print("[%s] Received getMediaIdFromURI request with URI=%s" % (thread_id, request.file_uri))
+        try:
+            sql = "SELECT * FROM public.cubeobjects WHERE file_uri='%s'" % request.file_uri
+            self.cursor.execute(sql)
+            if self.cursor.rowcount == 0: raise Exception("No results were fetched.")
+            result = self.cursor.fetchall()[0]
+            # print("[%s] -> Element fetched from DB, sending back ID to client..." % thread_id)
+            return rpc_objects.MediaResponse(
+                media=rpc_objects.Media(
+                        id= result["id"],
+                        file_uri= result["file_uri"],
+                        file_type= result["file_type"],
+                        thumbnail_uri= result["thumbnail_uri"]
+                    )
+            )
+        except Exception as e:
+            print("[%s] -> %s" % (thread_id, str(e)))
+            return rpc_objects.MediaResponse(error_message=str(e))
+
+
+    def getMedias(self, request: rpc_objects.GetMediasRequest, context):
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getMedias request." % thread_id)
         count = 0
         try:
             sql = """SELECT * FROM public.cubeobjects"""
+            if request.file_type > 0 :
+                sql += " WHERE file_type = %d" % request.file_type
             self.cursor.execute(sql)
             res = self.cursor.fetchall()
             if self.cursor.rowcount == 0: raise Exception("No results were fetched.")
@@ -83,39 +107,37 @@ class DataLoader(DataLoaderServicer):
         except Exception as e:
             print("[%s] -> %s" % (thread_id, str(e)))
             yield rpc_objects.MediaResponse(error_message=str(e))
-        # print("[%s] -> Fetched %d items from database" % (thread_id, count))
 
 
-    def getMediaIdFromURI(self, request: rpc_objects.GetMediaIdFromURIRequest, context) -> rpc_objects.IdResponse:
-        thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
-        print("[%s] Received getMediaIdFromURI request with URI=%s" % (thread_id, request.uri))
-        try:
-            sql = (
-                """SELECT id FROM public.cubeobjects WHERE file_uri='%s'"""
-                % request.uri
-            )
-            print(sql)
-            self.cursor.execute(sql)
-            if self.cursor.rowcount == 0: raise Exception("No results were fetched.")
-            result = self.cursor.fetchall()[0]
-            # print("[%s] -> Element fetched from DB, sending back ID to client..." % thread_id)
-            return rpc_objects.IdResponse(id=result[0])
-        except Exception as e:
-            print("[%s] -> %s" % (thread_id, str(e)))
-            return rpc_objects.IdResponse(error_message=str(e))
-
-
-
-    def createMedia(self, request: rpc_objects.CreateMediaRequest, context):
+    def createMedia(self, request: rpc_objects.CreateMediaRequest, context) -> rpc_objects.MediaResponse:
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received createMedia request." % thread_id)
-        sql = """INSERT INTO public.cubeobjects (file_uri, file_type, thumbnail_uri)
-VALUES ('%s', %d, '%s') RETURNING *;""" % (
-                request.media.file_uri,
-                request.media.file_type,
-                request.media.thumbnail_uri,
-            )
         try:
+            sql = "SELECT * FROM public.cubeobjects WHERE file_uri = '%s'" % request.media.file_uri
+            self.cursor.execute(sql)
+            if self.cursor.rowcount > 0 :
+                print("[%s] -> File URI '%s' already exists in database." % (thread_id, request.media.file_uri))
+                existing_media = self.cursor.fetchall()[0]
+                if existing_media['file_type'] == request.media.file_type and existing_media['thumbnail_uri'] == request.media.thumbnail_uri:
+                    print("[%s] -> No conflicts, returning existing media." % thread_id)
+                    return rpc_objects.MediaResponse(
+                        media=rpc_objects.Media(
+                            id= existing_media['id'],
+                            file_uri= existing_media['file_uri'],
+                            file_type= existing_media['file_type'],
+                            thumbnail_uri= existing_media['thumbnail_uri']
+                        ))
+                else :
+                    print("[%s] -> Other fields conflict, returning error message." % thread_id)
+                    return rpc_objects.MediaResponse(
+                        error_message="Error: Media URI '%s' already exists with a different type or thumbnail_uri." % request.media.file_uri
+                        )
+            sql = """INSERT INTO public.cubeobjects (file_uri, file_type, thumbnail_uri)
+    VALUES ('%s', %d, '%s') RETURNING *;""" % (
+                    request.media.file_uri,
+                    request.media.file_type,
+                    request.media.thumbnail_uri,
+                )
             self.cursor.execute(sql)
             response = self.cursor.fetchall()[0]
             return rpc_objects.MediaResponse(
@@ -192,7 +214,7 @@ VALUES
         count = 0
         try:
             sql = """SELECT * FROM public.tagsets"""
-            if request.tagTypeId:
+            if request.tagTypeId > 0 :
                 sql += " WHERE tagtype_id = %d" % request.tagTypeId
 
             self.cursor.execute(sql)
@@ -322,11 +344,11 @@ LEFT JOIN
 LEFT JOIN
     public.numerical_tags nt ON t.id = nt.id
             """
-            if request.tagSetId or request.tagTypeId:
+            if request.tagSetId > 0 or request.tagTypeId > 0:
                 sql += " WHERE "
-                if request.tagSetId and request.tagTypeId:
+                if request.tagSetId > 0 and request.tagTypeId > 0:
                     sql += "t.tagset_id = %d AND t.tagtype_id = %d" % (request.tagSetId, request.tagTypeId)
-                elif request.tagSetId:
+                elif request.tagSetId > 0:
                     sql += "t.tagset_id = %d" % request.tagSetId
                 else:
                     sql += "t.tagtype_id = %d" % request.tagTypeId
@@ -456,9 +478,9 @@ LEFT JOIN
             return rpc_objects.TagResponse(error_message=str(e))
 
 
-    def createOrGetTag(self, request: rpc_objects.CreateTagRequest, context) -> rpc_objects.TagResponse:
+    def createTag(self, request: rpc_objects.CreateTagRequest, context) -> rpc_objects.TagResponse:
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
-        print("[%s] Received createOrGetTag request with tagset_id=%d and tagtype_id=%d" % (thread_id, request.tagSetId, request.tagTypeId))
+        print("[%s] Received createTag request with tagset_id=%d and tagtype_id=%d" % (thread_id, request.tagSetId, request.tagTypeId))
         tagset_id = request.tagSetId
         tagtype_id = request.tagTypeId
         try:
@@ -691,11 +713,13 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
 
     #!================ Hierarchies  =======================================================================
 
-    def getHierarchies(self, request: rpc_objects.EmptyRequest, context) : 
+    def getHierarchies(self, request: rpc_objects.GetHierarchiesRequest, context) : 
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getHierarchies request." % thread_id)
         try:
             sql = "SELECT * FROM public.hierarchies"
+            if request.tagsetId > 0:
+                sql += " WHERE tagset_id = %d" % request.tagsetId
             self.cursor.execute(sql)
             res = self.cursor.fetchall()
             if len(res) == 0 : raise Exception("No results were fetched.") 
@@ -779,11 +803,24 @@ VALUES ('%s', %d) RETURNING *;""" % (
             print("[%s] -> %s" % (thread_id, str(e)))
             return rpc_objects.NodeResponse(error_message=str(e))   
     
-    def getNodesOfHierarchy(self, request: rpc_objects.IdRequest, context) :
+    def getNodes(self, request: rpc_objects.GetNodesRequest, context) :
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
-        print("[%s] Received getNodesOfHierarchy request with id=%d" % (thread_id, request.id))
+        print("[%s] Received getNodes request" % (thread_id))
         try:
-            sql = """SELECT * FROM public.nodes WHERE hierarchy_id=%d""" % request.id
+            sql = "SELECT * FROM public.nodes"
+            #  TODO: implement this in a smart way 
+            # Reflexion: a node is a tag reference in a hierarchy, 
+            # so if more than one filter is applied we'll get only one result
+            if request.hierarchyId > 0 or request.tagId > 0 or request.parentNodeId > 0:
+                sql += " WHERE"
+                if request.hierarchyId > 0:
+                    sql += " hierarchy_id = %d AND" % request.hierarchyId
+                if request.tagId > 0:
+                    sql += " tag_id = %d AND" % request.tagId
+                if request.parentNodeId > 0:
+                    sql += " parentnode_id = %d AND" % request.parentNodeId
+                sql = sql[:len(sql)-3]
+            print(sql)         
             self.cursor.execute(sql)
             results = self.cursor.fetchall()
             if self.cursor.rowcount == 0 : raise Exception("No results were fetched.")
@@ -797,29 +834,9 @@ VALUES ('%s', %d) RETURNING *;""" % (
                     )
                 )
         except Exception as e:
-            print("[%s] -> No results were fetched, sending error message to client..." % thread_id)
+            print("[%s] -> %s" % (thread_id, str(e)))
             yield rpc_objects.NodeResponse(error_message=str(e))
 
-    def getChildNodes(self, request: rpc_objects.IdRequest, context) :
-        thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
-        print("[%s] Received getChildNodes request with id=%d" % (thread_id, request.id))
-        try:
-            sql = """SELECT * FROM public.nodes WHERE parentnode_id=%d""" % request.id
-            self.cursor.execute(sql)
-            results = self.cursor.fetchall()
-            if self.cursor.rowcount == 0 : raise Exception("No results were fetched.")
-            for result in results:
-                yield rpc_objects.NodeResponse(
-                    node=rpc_objects.Node(
-                        id=result['id'],
-                        tagId=result['tag_id'],
-                        hierarchyId=result['hierarchy_id'],
-                        parentNodeId=result['parentnode_id']
-                    )
-                )
-        except Exception as e:
-            print("[%s] -> %s" % (thread_id, str(e)))           
-            yield rpc_objects.NodeResponse(error_message=str(e))
 
     def createNode(self, request: rpc_objects.CreateNodeRequest, context) -> rpc_objects.NodeResponse :
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
@@ -847,7 +864,7 @@ VALUES ('%s', %d) RETURNING *;""" % (
                 return rpc_objects.NodeResponse(error_message=str(e))
         
         else: # add a root node to hierarchy, only if it doesn't have any
-            sql = "SELECT * FROM hierarchies WHERE id = %d" % request.hierarchyId
+            sql = "SELECT * FROM public.hierarchies WHERE id = %d" % request.hierarchyId
             try:
                 self.cursor.execute(sql)
                 if self.cursor.rowcount == 0:

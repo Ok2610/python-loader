@@ -86,17 +86,33 @@ class EmptyRequest(_message.Message):
     __slots__ = []
     def __init__(self) -> None: ...
 
-class GetHierarchyRequest(_message.Message):
-    __slots__ = ["tagId"]
-    TAGID_FIELD_NUMBER: _ClassVar[int]
-    tagId: int
-    def __init__(self, tagId: _Optional[int] = ...) -> None: ...
+class GetHierarchiesRequest(_message.Message):
+    __slots__ = ["tagsetId"]
+    TAGSETID_FIELD_NUMBER: _ClassVar[int]
+    tagsetId: int
+    def __init__(self, tagsetId: _Optional[int] = ...) -> None: ...
 
-class GetMediaIdFromURIRequest(_message.Message):
-    __slots__ = ["uri"]
-    URI_FIELD_NUMBER: _ClassVar[int]
-    uri: str
-    def __init__(self, uri: _Optional[str] = ...) -> None: ...
+class GetMediaByURIRequest(_message.Message):
+    __slots__ = ["file_uri"]
+    FILE_URI_FIELD_NUMBER: _ClassVar[int]
+    file_uri: str
+    def __init__(self, file_uri: _Optional[str] = ...) -> None: ...
+
+class GetMediasRequest(_message.Message):
+    __slots__ = ["file_type"]
+    FILE_TYPE_FIELD_NUMBER: _ClassVar[int]
+    file_type: int
+    def __init__(self, file_type: _Optional[int] = ...) -> None: ...
+
+class GetNodesRequest(_message.Message):
+    __slots__ = ["hierarchyId", "parentNodeId", "tagId"]
+    HIERARCHYID_FIELD_NUMBER: _ClassVar[int]
+    PARENTNODEID_FIELD_NUMBER: _ClassVar[int]
+    TAGID_FIELD_NUMBER: _ClassVar[int]
+    hierarchyId: int
+    parentNodeId: int
+    tagId: int
+    def __init__(self, tagId: _Optional[int] = ..., hierarchyId: _Optional[int] = ..., parentNodeId: _Optional[int] = ...) -> None: ...
 
 class GetTagSetRequestByName(_message.Message):
     __slots__ = ["name"]

@@ -108,14 +108,14 @@ def exportJSON(path):
     tagsets = []
     medias = []
 
-    response_tagsets = client.listall_tagsets(-1)
+    response_tagsets = client.get_tagsets(-1)
     for tagset_response in response_tagsets:
         tagsets.append(
             {"name": tagset_response.name,      # type: ignore
              "type": tagset_response.tagTypeId   # type: ignore
             })
     
-    response_medias = client.listall_medias()
+    response_medias = client.get_medias(-1)
     for media_response in response_medias:
         # print(media_response)
         media_path = media_response.file_uri                              # type: ignore
@@ -153,7 +153,7 @@ def exportCSV(path):
 
     # Prepare the header line with tagset names and types
     header = []
-    response_tagsets = client.listall_tagsets(-1)
+    response_tagsets = client.get_tagsets(-1)
     for tagset_response in response_tagsets:
         header.extend([f"\"{tagset_response.name}\"", f"{tagset_response.tagTypeId}"]) # type: ignore
         
@@ -163,7 +163,7 @@ def exportCSV(path):
         csv_writer.writerow(header)
 
 
-        response_medias = client.listall_medias()
+        response_medias = client.get_medias(-1)
         for media_response in response_medias:
             path = media_response.file_uri                              # type: ignore
             row = [f'\"{path}\"']

@@ -22,33 +22,36 @@ def cli():
 
 @cli.group()
 def get():
-    """Retrieve stored information from the model"""
+    """Retrieve stored information from the database."""
     pass
 
 
 @get.command()
-@click.argument("id", type=int)
-def media(id): # type: ignore
-    """Get a single media with the given ID"""
-    if id > 0:
-        response = client.get_media(id)
+@click.option("-i", "--id", "media_id", type=int, help="Media ID")
+@click.option("-u", "--uri", "media_uri", type=str, help="Media URI")
+def media(media_id, media_uri): # type: ignore
+    """Retrieve a single media. You can either provide its ID using [-i] or its URI using [-u]."""
+    if media_id is not None:
+        if media_id > 0 :
+            response = client.get_media_by_id(media_id)
+            click.echo(response)
+        else:
+            click.echo("Error: index must be > 0")
+
+    elif media_uri is not None:
+        click.echo("Boop")
+        response = client.get_media_by_uri(media_uri)
         click.echo(response)
+
     else:
-        click.echo("Error: index must be > 0")
+        click.echo("Usage: loader get media [-i ID | -u URI]\nTry 'loader get media --help' for help.\n\nError: Missing argument 'ID' or 'URI'")
 
 
 @get.command()
-@click.argument("file_uri", type=str)
-def media_from_uri(file_uri):
-    """Get a an object ID using its URI"""
-    response = client.get_id(file_uri)
-    click.echo(response)
-
-
-@get.command()
-def medias(): # type: ignore
-    """List all the medias stored"""
-    response_iterator = client.listall_medias()
+@click.option("-ft", "--file_type", "file_type", type=int, default=-1, help="File type filter (default: all)")
+def medias(file_type): # type: ignore
+    """List and filter medias. Use [-tp] to filter results with a specific file type (1 = Images, 2 = Videos, 3 = Audio, 4 = Other)"""
+    response_iterator = client.get_medias(file_type)
     for response in response_iterator:
         click.echo(response)
 
@@ -57,6 +60,7 @@ def medias(): # type: ignore
 @click.option("-i", "--id", "tagset_id", type=int, help="Tagset ID")
 @click.option("-n", "--name", "tagset_name", type=str, help="Tagset name")
 def tagset(tagset_id, tagset_name): # type: ignore
+    """Retrieve a single tagset. You can either provide its ID using [-i] or its name using [-n]."""
     if tagset_id is not None:
         response = client.get_tagset_by_id(tagset_id)
         click.echo(response)
@@ -68,10 +72,10 @@ def tagset(tagset_id, tagset_name): # type: ignore
 
 
 @get.command()
-@click.option("-t", "--type", "tagtype_id", type=int, default=-1, help="Tag type filter (default: all).")
+@click.option("-tp", "--type", "tagtype_id", type=int, default=-1, help="Tag type filter (default: all)")
 def tagsets(tagtype_id): # type: ignore
-    """List all existent tagsets"""
-    response_iterator = client.listall_tagsets(tagtype_id)
+    """List and filter tagsets. Use [-tp] to filter results with a specific tag type."""
+    response_iterator = client.get_tagsets(tagtype_id)
     for response in response_iterator:
         click.echo(response)
 
@@ -79,7 +83,7 @@ def tagsets(tagtype_id): # type: ignore
 @get.command()
 @click.argument("id", type=int)
 def tag(id): # type: ignore
-    """Get a single tag with the given ID"""
+    """Get a single tag with given ID."""
     if id > 0:
         response = client.get_tag(id)
         click.echo(response)
@@ -88,11 +92,11 @@ def tag(id): # type: ignore
 
 
 @get.command()
-@click.option("-tp", "--type", "tagtype_id", type=int, default=-1, help="Tag type filter (default: all).")
-@click.option("-ts", "--tagset", "tagset_id", type=int, default=-1, help="Tagset filter (default: all).")
+@click.option("-tp", "--type", "tagtype_id", type=int, default=-1, help="Tag type filter (default: all)")
+@click.option("-ts", "--tagset", "tagset_id", type=int, default=-1, help="Tagset filter (default: all)")
 def tags(tagtype_id, tagset_id): # type: ignore
-    """List all existent tags"""
-    response_iterator = client.listall_tags(tagtype_id=tagtype_id, tagset_id=tagset_id)
+    """List and filter tags. Use [-tp] to filter results with a specific tag type or [-ts] for a specific tagset."""
+    response_iterator = client.get_tags(tagtype_id=tagtype_id, tagset_id=tagset_id)
     for response in response_iterator:
         click.echo(response)
 
@@ -100,7 +104,7 @@ def tags(tagtype_id, tagset_id): # type: ignore
 @get.command()
 @click.argument("tag_id", type=int)
 def medias_with_tag(tag_id): # type: ignore
-    """List the medias with the specified tag"""
+    """List medias with the specified tag."""
     if tag_id > 0:
         response_iterator = client.get_medias_with_tag(tag_id)
         for response in response_iterator:
@@ -112,7 +116,7 @@ def medias_with_tag(tag_id): # type: ignore
 @get.command()
 @click.argument("media_id", type=int)
 def tags_of_media(media_id): # type: ignore
-    """List the tags of a given media"""
+    """List the tags of a given media."""
     if media_id > 0:
         response_iterator = client.get_media_tags(media_id)
         for response in response_iterator:
@@ -123,14 +127,14 @@ def tags_of_media(media_id): # type: ignore
 
 @get.command()
 def taggings():
-    """List all existent taggings"""
-    response_iterator = client.listall_taggings()
+    """List all taggings."""
+    response_iterator = client.get_taggings()
     for response in response_iterator:
         click.echo(response)
 @get.command()
 @click.argument("id", type=int)
 def hierarchy(id): # type: ignore
-    """Get a single hierarchy with the given ID"""
+    """Get a single hierarchy with the given ID."""
     if id > 0:
         response = client.get_hierarchy(id)
         click.echo(response)
@@ -138,9 +142,10 @@ def hierarchy(id): # type: ignore
         click.echo("Error: index must be > 0")
 
 @get.command()
-def hierarchies():
-    """List all existent hierarchies"""
-    response_iterator = client.listall_hierarchies()
+@click.option("-ts", "--tagset", "tagset_id", type=int, default=-1, help="Tagset filter (default: all)")
+def hierarchies(tagset_id):
+    """List and filter hierarchies. Use [-ts] to filter hierarchies of a specific tagset only."""
+    response_iterator = client.get_hierarchies(tagset_id)
     for response in response_iterator:
         click.echo(response)
 
@@ -148,7 +153,7 @@ def hierarchies():
 @get.command()
 @click.argument("id", type=int)
 def node(id): # type: ignore
-    """Get a single node with the given ID"""
+    """Get a single node with the given ID."""
     if id > 0:
         response = client.get_node(id)
         click.echo(response)
@@ -157,29 +162,30 @@ def node(id): # type: ignore
 
 
 @get.command()
-@click.argument("node_id", type=int)
-def child_nodes(node_id):
-    """List the child nodes of a selected node"""
-    response_iterator = client.get_child_nodes(node_id)
-    for response in response_iterator:
-        click.echo(response)
-
-@get.command()
-@click.argument("hierarchy_id", type=int)
-def nodes_of_hierarchy(hierarchy_id):
-    """List all the nodes of a selected hierarchy"""
-    response_iterator = client.get_nodes_of_hierarchy(hierarchy_id)
+@click.option("-h", "--hierarchy", "hierarchy_id", type=int, default=-1, help="Hierarchy filter (default: all)") 
+@click.option("-t", "--tag", "tag_id", type=int, default=-1, help="Tag filter (default: all)")
+@click.option("-p", "--parent", "parentnode_id", type=int, default=-1, help="Parent node filter (default: all)")
+def nodes(hierarchy_id, tag_id, parentnode_id):
+    """List and filter nodes. Use [-h], [-t] and [-p] to filter on hierarchy, tag or parent node respectively."""
+    response_iterator = client.get_nodes(hierarchy_id, tag_id, parentnode_id)
     for response in response_iterator:
         click.echo(response)
 
 #!================ ADD functions ======================================================================
-
-
 @cli.group()
 def add():
     """Add elements to the database model"""
     pass
 
+@add.command()
+@click.argument("path", type=click.Path(exists=True))
+def media(path): # type: ignore
+    """Add a given file to the database."""
+    if os.path.isfile(path):
+        response = client.add_file(path)
+        click.echo(response)
+    else:
+        click.echo("Error: invalid path provided.")
 
 @add.command()
 @click.argument("path", type=click.Path(exists=True))
@@ -190,15 +196,12 @@ def add():
     default=["jpg", "png", "bmp", "mp3", "wav", "flac", "mp4", "avi"],
     help="File formats to include (default: jpg, png, bmp, mp3, wav, flac, mp4, avi)",
 )
-def media(path, formats): # type: ignore
-    """Add a file or multiple files from a specified directory to the database."""
+def medias(path, formats): # type: ignore
+    """Add a multiple files from a specified directory to the database. Be careful, the same file location cannot be added twice to the database."""
     if os.path.isdir(path):
         response_iterator = client.add_dir(path, formats)
         for response in response_iterator:
             click.echo(response)
-    elif os.path.isfile(path):
-        response = client.add_file(path)
-        click.echo(response)
     else:
         click.echo("Error: invalid path provided.")
 
@@ -240,10 +243,10 @@ def validate_format(ctx, param, value):
     return value
 
 @add.command()
+@click.argument("value", callback=validate_format)
 @click.argument("tagset_id", type=int)
 @click.argument("type_id", type=int)
-@click.argument("value", callback=validate_format)
-def tag(tagset_id, type_id, value): # type: ignore
+def tag(value, tagset_id, type_id): # type: ignore
     """Create a new tag with specified value. Based on the type, formats are as follows:\n
 1 - Alphanumerical: any\n\n2 - Timestamp: YYYY-MM-dd/hh:mm:ss\n\n3 - Time: hh:mm:ss\n\n4 - Date: YYYY-MM-dd\n\n5 - Numerical: integer"""
     response = client.add_tag(tagset_id, type_id, value)
