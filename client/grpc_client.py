@@ -160,26 +160,26 @@ class LoaderClient:
                 request = rpc_objects.CreateTagRequest(
                     tagSetId=tagset_id, 
                     tagTypeId=tagtype_id,
-                    alphanumerical = rpc_objects.AlphanumericalValue(value=value)
+                    alphanumerical = rpc_objects.AlphanumericalValue(value=str(value))
                 )
             case 2: 
                 value = value.replace('/', ' ')
                 request = rpc_objects.CreateTagRequest(
                     tagSetId=tagset_id, 
                     tagTypeId=tagtype_id,
-                    timestamp = rpc_objects.TimeStampValue(value=value)
+                    timestamp = rpc_objects.TimeStampValue(value=str(value))
                 )
             case 3: 
                 request = rpc_objects.CreateTagRequest(
                     tagSetId=tagset_id, 
                     tagTypeId=tagtype_id,
-                    time = rpc_objects.TimeValue(value=value)
+                    time = rpc_objects.TimeValue(value=str(value))
                 )
             case 4: 
                 request = rpc_objects.CreateTagRequest(
                     tagSetId=tagset_id, 
                     tagTypeId=tagtype_id,
-                    date = rpc_objects.DateValue(value=value)
+                    date = rpc_objects.DateValue(value=str(value))
                 )
             case 5: 
                 request = rpc_objects.CreateTagRequest(
@@ -220,23 +220,21 @@ class LoaderClient:
 
     def get_medias_with_tag(self, id: int):
         request = rpc_objects.IdRequest(id=id)
-        response_iterator = self.grpc_stub.getMediasWithTag(request)
-        for response in response_iterator:
-            yield response.error_message if response.error_message \
-            else response.id
+        response = self.grpc_stub.getMediasWithTag(request)
+        return response.error_message if response.error_message \
+        else response.ids
 
     def get_media_tags(self, id: int):
         request = rpc_objects.IdRequest(id=id)
-        response_iterator = self.grpc_stub.getMediaTags(request)
-        for response in response_iterator:
-            yield response.error_message if response.error_message \
-            else response.id
+        response = self.grpc_stub.getMediaTags(request)
+        return response.error_message if response.error_message \
+        else response.ids
 
 #!================ Hierarchy functions ====================================================================
 
     def get_hierarchies(self, tagset_id: int):
         if tagset_id > 0:
-            request = rpc_objects.GetHierarchiesRequest(tagsetId=tagset_id)
+            request = rpc_objects.GetHierarchiesRequest(tagSetId=tagset_id)
         else: 
             request = rpc_objects.GetHierarchiesRequest()
         response_iterator = self.grpc_stub.getHierarchies(request)
@@ -247,7 +245,7 @@ class LoaderClient:
     def add_hierarchy(self, name: str, tagset_id: int):
         request = rpc_objects.CreateHierarchyRequest(
             name=name,
-            tagsetId=tagset_id
+            tagSetId=tagset_id
         )
         response = self.grpc_stub.createHierarchy(request)
         return response.error_message if response.error_message \

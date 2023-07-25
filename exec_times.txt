@@ -1,0 +1,10 @@
+EXPORTS TO JSON
+
+Tagsets and tags: ~15sec
+Medias:	- with print: 24sec, 29sec
+	- without: 14sec, 16sec
+Hierarchies: 	- with print: 241sec
+		- without: 200sec
+		- without and efficientTree: 92sec
+
+Total efficient + minimal prints : 114sec

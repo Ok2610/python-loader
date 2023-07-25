@@ -6,7 +6,7 @@ import re
 import datetime
 
 from grpc_client import LoaderClient
-import FileHandler
+from filemgmt import *
 
 
 client = LoaderClient(grpc_host='localhost', grpc_port='50051')
@@ -39,7 +39,6 @@ def media(media_id, media_uri): # type: ignore
             click.echo("Error: index must be > 0")
 
     elif media_uri is not None:
-        click.echo("Boop")
         response = client.get_media_by_uri(media_uri)
         click.echo(response)
 
@@ -106,9 +105,8 @@ def tags(tagtype_id, tagset_id): # type: ignore
 def medias_with_tag(tag_id): # type: ignore
     """List medias with the specified tag."""
     if tag_id > 0:
-        response_iterator = client.get_medias_with_tag(tag_id)
-        for response in response_iterator:
-            click.echo(response)
+        response = client.get_medias_with_tag(tag_id)
+        click.echo(response)
     else:
         click.echo("Error: index must be > 0")
 
@@ -118,9 +116,8 @@ def medias_with_tag(tag_id): # type: ignore
 def tags_of_media(media_id): # type: ignore
     """List the tags of a given media."""
     if media_id > 0:
-        response_iterator = client.get_media_tags(media_id)
-        for response in response_iterator:
-            click.echo(response)
+        response = client.get_media_tags(media_id)
+        click.echo(response)
     else:
         click.echo("Error: index must be > 0")
 
@@ -218,9 +215,7 @@ def tagset(name, type): # type: ignore
     click.echo(response)
 
 
-def validate_format(ctx, param, value):
-    type = ctx.params.get('type_id')
-
+def validate_format(value, type):
     match type:
         case 1:
             return value
@@ -243,12 +238,13 @@ def validate_format(ctx, param, value):
     return value
 
 @add.command()
-@click.argument("value", callback=validate_format)
+@click.argument("value")
 @click.argument("tagset_id", type=int)
 @click.argument("type_id", type=int)
 def tag(value, tagset_id, type_id): # type: ignore
     """Create a new tag with specified value. Based on the type, formats are as follows:\n
 1 - Alphanumerical: any\n\n2 - Timestamp: YYYY-MM-dd/hh:mm:ss\n\n3 - Time: hh:mm:ss\n\n4 - Date: YYYY-MM-dd\n\n5 - Numerical: integer"""
+    value = validate_format(value, type_id)
     response = client.add_tag(tagset_id, type_id, value)
     click.echo(response)
     
@@ -319,11 +315,11 @@ def import_command(format, path):
     """Add tagsets, objects and tags from a setup file in the selected format."""
     if os.path.isfile(path) & path.lower().endswith(format):
         if format == "json":
-            result_message = FileHandler.importJSON(path)
-            click.echo(result_message)
+            fileHandler = JSONHandler()
+            fileHandler.importFile(path)
         elif format == "csv":
-            result_message = FileHandler.importCSV(path)
-            click.echo(result_message)
+            fileHandler = CSVHandler()
+            fileHandler.importFile(path)
         else:
             click.echo("Error: format '%s' is not supported." % format)
     else:
@@ -352,15 +348,47 @@ def export_command(format, path):
             file_id += 1
 
     if format == "json":
-        result_message = FileHandler.exportJSON(path)
-        click.echo("File created at %s" % path)
-        click.echo(result_message)
+        fileHandler = JSONHandler()
     elif format == "csv":
-        result_message = FileHandler.exportCSV(path)
-        click.echo("File created at %s" % path)
-        click.echo(result_message)
+        fileHandler = CSVHandler()
     else:
         click.echo("Error: format '%s' is not supported." % format)
+        return
+    
+    fileHandler.exportFile(path)
+    click.echo("File created at %s" % path)
+
+
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True))
+def import_fast(path):
+    """Add tagsets, objects and tags from a setup file in the selected format."""
+    if os.path.isfile(path) & path.lower().endswith('json'):
+        fileHandler = FastJSONHandler()
+        fileHandler.importFile(path)
+    else:
+        click.echo("Error: invalid file path or format.")
+
+@cli.command()
+@click.argument("path", type=click.Path())
+def export_fast(path):
+    """Export the current collection configuration. Human-readability is sacrificed for more speed."""
+    
+    if os.path.isdir(path):
+        # Generate the file name automatically
+        dir_path = path
+        file_id = 1
+        today = datetime.datetime.today().strftime("%Y-%m-%d")
+        while True:
+            path = f"{dir_path}/{today}-{file_id}.{format}"
+            if not os.path.isfile(path):
+                break
+            file_id += 1
+
+    fileHandler = FastJSONHandler()
+    fileHandler.exportFile(path)
+    click.echo("File created at %s" % path)
 
 
 

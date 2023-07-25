@@ -1,6 +1,7 @@
+from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -11,12 +12,12 @@ class AlphanumericalValue(_message.Message):
     def __init__(self, value: _Optional[str] = ...) -> None: ...
 
 class CreateHierarchyRequest(_message.Message):
-    __slots__ = ["name", "tagsetId"]
+    __slots__ = ["name", "tagSetId"]
     NAME_FIELD_NUMBER: _ClassVar[int]
     TAGSETID_FIELD_NUMBER: _ClassVar[int]
     name: str
-    tagsetId: int
-    def __init__(self, name: _Optional[str] = ..., tagsetId: _Optional[int] = ...) -> None: ...
+    tagSetId: int
+    def __init__(self, name: _Optional[str] = ..., tagSetId: _Optional[int] = ...) -> None: ...
 
 class CreateMediaRequest(_message.Message):
     __slots__ = ["media"]
@@ -87,10 +88,10 @@ class EmptyRequest(_message.Message):
     def __init__(self) -> None: ...
 
 class GetHierarchiesRequest(_message.Message):
-    __slots__ = ["tagsetId"]
+    __slots__ = ["tagSetId"]
     TAGSETID_FIELD_NUMBER: _ClassVar[int]
-    tagsetId: int
-    def __init__(self, tagsetId: _Optional[int] = ...) -> None: ...
+    tagSetId: int
+    def __init__(self, tagSetId: _Optional[int] = ...) -> None: ...
 
 class GetMediaByURIRequest(_message.Message):
     __slots__ = ["file_uri"]
@@ -135,7 +136,7 @@ class GetTagsRequest(_message.Message):
     def __init__(self, tagSetId: _Optional[int] = ..., tagTypeId: _Optional[int] = ...) -> None: ...
 
 class Hierarchy(_message.Message):
-    __slots__ = ["id", "name", "rootNodeId", "tagsetId"]
+    __slots__ = ["id", "name", "rootNodeId", "tagSetId"]
     ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     ROOTNODEID_FIELD_NUMBER: _ClassVar[int]
@@ -143,8 +144,8 @@ class Hierarchy(_message.Message):
     id: int
     name: str
     rootNodeId: int
-    tagsetId: int
-    def __init__(self, id: _Optional[int] = ..., name: _Optional[str] = ..., tagsetId: _Optional[int] = ..., rootNodeId: _Optional[int] = ...) -> None: ...
+    tagSetId: int
+    def __init__(self, id: _Optional[int] = ..., name: _Optional[str] = ..., tagSetId: _Optional[int] = ..., rootNodeId: _Optional[int] = ...) -> None: ...
 
 class HierarchyResponse(_message.Message):
     __slots__ = ["error_message", "hierarchy"]
@@ -213,6 +214,14 @@ class NumericalValue(_message.Message):
     VALUE_FIELD_NUMBER: _ClassVar[int]
     value: int
     def __init__(self, value: _Optional[int] = ...) -> None: ...
+
+class RepeatedIdResponse(_message.Message):
+    __slots__ = ["error_message", "ids"]
+    ERROR_MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    IDS_FIELD_NUMBER: _ClassVar[int]
+    error_message: str
+    ids: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, ids: _Optional[_Iterable[int]] = ..., error_message: _Optional[str] = ...) -> None: ...
 
 class StatusResponse(_message.Message):
     __slots__ = ["error_message"]

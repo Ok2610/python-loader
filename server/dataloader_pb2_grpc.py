@@ -84,15 +84,15 @@ class DataLoaderStub(object):
                 request_serializer=dataloader__pb2.EmptyRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.TaggingResponse.FromString,
                 )
-        self.getMediasWithTag = channel.unary_stream(
+        self.getMediasWithTag = channel.unary_unary(
                 '/dataloader.DataLoader/getMediasWithTag',
                 request_serializer=dataloader__pb2.IdRequest.SerializeToString,
-                response_deserializer=dataloader__pb2.IdResponse.FromString,
+                response_deserializer=dataloader__pb2.RepeatedIdResponse.FromString,
                 )
-        self.getMediaTags = channel.unary_stream(
+        self.getMediaTags = channel.unary_unary(
                 '/dataloader.DataLoader/getMediaTags',
                 request_serializer=dataloader__pb2.IdRequest.SerializeToString,
-                response_deserializer=dataloader__pb2.IdResponse.FromString,
+                response_deserializer=dataloader__pb2.RepeatedIdResponse.FromString,
                 )
         self.createTagging = channel.unary_unary(
                 '/dataloader.DataLoader/createTagging',
@@ -374,15 +374,15 @@ def add_DataLoaderServicer_to_server(servicer, server):
                     request_deserializer=dataloader__pb2.EmptyRequest.FromString,
                     response_serializer=dataloader__pb2.TaggingResponse.SerializeToString,
             ),
-            'getMediasWithTag': grpc.unary_stream_rpc_method_handler(
+            'getMediasWithTag': grpc.unary_unary_rpc_method_handler(
                     servicer.getMediasWithTag,
                     request_deserializer=dataloader__pb2.IdRequest.FromString,
-                    response_serializer=dataloader__pb2.IdResponse.SerializeToString,
+                    response_serializer=dataloader__pb2.RepeatedIdResponse.SerializeToString,
             ),
-            'getMediaTags': grpc.unary_stream_rpc_method_handler(
+            'getMediaTags': grpc.unary_unary_rpc_method_handler(
                     servicer.getMediaTags,
                     request_deserializer=dataloader__pb2.IdRequest.FromString,
-                    response_serializer=dataloader__pb2.IdResponse.SerializeToString,
+                    response_serializer=dataloader__pb2.RepeatedIdResponse.SerializeToString,
             ),
             'createTagging': grpc.unary_unary_rpc_method_handler(
                     servicer.createTagging,
@@ -688,9 +688,9 @@ class DataLoader(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/dataloader.DataLoader/getMediasWithTag',
+        return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/getMediasWithTag',
             dataloader__pb2.IdRequest.SerializeToString,
-            dataloader__pb2.IdResponse.FromString,
+            dataloader__pb2.RepeatedIdResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -705,9 +705,9 @@ class DataLoader(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/dataloader.DataLoader/getMediaTags',
+        return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/getMediaTags',
             dataloader__pb2.IdRequest.SerializeToString,
-            dataloader__pb2.IdResponse.FromString,
+            dataloader__pb2.RepeatedIdResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

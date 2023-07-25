@@ -24,8 +24,8 @@ service DataLoader {
 
 	// Tagging
 	rpc getTaggings(EmptyRequest) returns (stream TaggingResponse) {};
-  rpc getMediasWithTag(IdRequest) returns (stream IdResponse) {};
-  rpc getMediaTags(IdRequest) returns (stream IdResponse) {};
+  rpc getMediasWithTag(IdRequest) returns (RepeatedIdResponse) {};
+  rpc getMediaTags(IdRequest) returns (RepeatedIdResponse) {};
 	rpc createTagging(CreateTaggingRequest) returns (TaggingResponse) {};
 
   // Hierarchies
@@ -56,6 +56,11 @@ message IdRequest {
 
 message IdResponse {
 	int64 id = 1;
+  string error_message = 2;
+}
+
+message RepeatedIdResponse {
+  repeated int64 ids = 1;
   string error_message = 2;
 }
 
@@ -198,17 +203,17 @@ message TaggingResponse {
 message Hierarchy {
   int64 id = 1;
   string name = 2;
-  int64 tagsetId = 3;
+  int64 tagSetId = 3;
   int64 rootNodeId = 4;  
 }
 
 message GetHierarchiesRequest {
-  int64 tagsetId = 1;
+  int64 tagSetId = 1;
 }
 
 message CreateHierarchyRequest {
   string name = 1;
-  int64 tagsetId = 2;
+  int64 tagSetId = 2;
 }
 
 message HierarchyResponse {
