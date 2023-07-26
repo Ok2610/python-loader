@@ -95,7 +95,7 @@ class LoaderClient:
 
 
     # Delete a single media with the given ID
-    def delete(self, id: int):
+    def delete_media(self, id: int):
         request = rpc_objects.IdRequest(id=id)
         response = self.grpc_stub.deleteMedia(request)
         return response.error_message if response.error_message \
@@ -297,14 +297,13 @@ class LoaderClient:
             yield response.error_message if response.error_message \
             else response.node
     
-    def get_child_nodes(self, id: int):
-        request = rpc_objects.IdRequest(id=id)
-        response_iterator = self.grpc_stub.getChildNodes(request)
-        for response in response_iterator:
-            yield response.error_message if response.error_message \
-            else response.node
-
+    def delete_node(self, node_id: int):
+        request = rpc_objects.IdRequest(id=node_id)
+        response = self.grpc_stub.deleteNode(request)
+        return response.error_message if response.error_message \
+        else f"Node {node_id} deleted."
     
+
     #!================ DB management ======================================================================
 
     # Reset the database

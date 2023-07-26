@@ -291,14 +291,25 @@ def delete():
     pass
 
 @delete.command()
-@click.argument("id", type=int)
-def media(id):
+@click.argument("media_id", type=int)
+def media(media_id):
     """Delete a single media with the given ID"""
-    if id > 0:
-        response = client.delete(id)
+    if media_id > 0:
+        response = client.delete_media(media_id)
         click.echo(response)
     else:
         click.echo("Input error: index must be > 0")
+
+@delete.command()
+@click.argument("node_id", type=int)
+def node(node_id):
+    """Delete a single node with the given ID"""
+    if node_id > 0:
+        response = client.delete_node(node_id)
+        click.echo(response)
+    else:
+        click.echo("Input error: index must be > 0")
+
 
 
 #!================ General functions ======================================================================

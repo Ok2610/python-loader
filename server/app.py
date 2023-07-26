@@ -927,6 +927,25 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             except Exception as e:
                 print("[%s] -> %s" % (thread_id, str(e)))
                 return rpc_objects.NodeResponse(error_message=str(e))
+            
+
+    def deleteNode(self, request: rpc_objects.IdRequest, context) -> rpc_objects.StatusResponse:
+        # The current behaviour enforced by the DB rules is that you cannot delete a node with childs,
+        # or the rootnode of a hierarchy
+        thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
+        print("[%s] Received deleteNode request with id=%d" % (thread_id, request.id))
+        try:
+            sql = "DELETE FROM public.nodes WHERE id=%d;" % request.id
+            self.cursor.execute(sql)
+            if self.cursor.rowcount > 0:
+                self.conn.commit()
+                return rpc_objects.StatusResponse()
+            else:
+                raise Exception("Element not found")
+        except Exception as e:
+            print("[%s] -> %s" % (thread_id, str(e)))
+            return rpc_objects.StatusResponse(error_message=str(e))
+        
 
     #!================ DB Management ======================================================================
     def resetDatabase(self, request: rpc_objects.EmptyRequest, context) -> rpc_objects.StatusResponse:

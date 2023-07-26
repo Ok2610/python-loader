@@ -36,9 +36,9 @@ service DataLoader {
   // Nodes
   rpc getNode (IdRequest) returns (NodeResponse) {};
   rpc getNodes (GetNodesRequest) returns (stream NodeResponse) {};
-  rpc getChildNodes(IdRequest) returns (stream NodeResponse) {};
   rpc createNode (CreateNodeRequest) returns (NodeResponse) {};    
-
+  rpc deleteNode (IdRequest) returns (StatusResponse) {}
+  
   // Other
 	rpc resetDatabase (EmptyRequest) returns (StatusResponse) {};
 }

@@ -124,15 +124,15 @@ class DataLoaderStub(object):
                 request_serializer=dataloader__pb2.GetNodesRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.NodeResponse.FromString,
                 )
-        self.getChildNodes = channel.unary_stream(
-                '/dataloader.DataLoader/getChildNodes',
-                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
-                response_deserializer=dataloader__pb2.NodeResponse.FromString,
-                )
         self.createNode = channel.unary_unary(
                 '/dataloader.DataLoader/createNode',
                 request_serializer=dataloader__pb2.CreateNodeRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.NodeResponse.FromString,
+                )
+        self.deleteNode = channel.unary_unary(
+                '/dataloader.DataLoader/deleteNode',
+                request_serializer=dataloader__pb2.IdRequest.SerializeToString,
+                response_deserializer=dataloader__pb2.StatusResponse.FromString,
                 )
         self.resetDatabase = channel.unary_unary(
                 '/dataloader.DataLoader/resetDatabase',
@@ -282,13 +282,13 @@ class DataLoaderServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def getChildNodes(self, request, context):
+    def createNode(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def createNode(self, request, context):
+    def deleteNode(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -414,15 +414,15 @@ def add_DataLoaderServicer_to_server(servicer, server):
                     request_deserializer=dataloader__pb2.GetNodesRequest.FromString,
                     response_serializer=dataloader__pb2.NodeResponse.SerializeToString,
             ),
-            'getChildNodes': grpc.unary_stream_rpc_method_handler(
-                    servicer.getChildNodes,
-                    request_deserializer=dataloader__pb2.IdRequest.FromString,
-                    response_serializer=dataloader__pb2.NodeResponse.SerializeToString,
-            ),
             'createNode': grpc.unary_unary_rpc_method_handler(
                     servicer.createNode,
                     request_deserializer=dataloader__pb2.CreateNodeRequest.FromString,
                     response_serializer=dataloader__pb2.NodeResponse.SerializeToString,
+            ),
+            'deleteNode': grpc.unary_unary_rpc_method_handler(
+                    servicer.deleteNode,
+                    request_deserializer=dataloader__pb2.IdRequest.FromString,
+                    response_serializer=dataloader__pb2.StatusResponse.SerializeToString,
             ),
             'resetDatabase': grpc.unary_unary_rpc_method_handler(
                     servicer.resetDatabase,
@@ -814,23 +814,6 @@ class DataLoader(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def getChildNodes(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/dataloader.DataLoader/getChildNodes',
-            dataloader__pb2.IdRequest.SerializeToString,
-            dataloader__pb2.NodeResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
     def createNode(request,
             target,
             options=(),
@@ -844,6 +827,23 @@ class DataLoader(object):
         return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/createNode',
             dataloader__pb2.CreateNodeRequest.SerializeToString,
             dataloader__pb2.NodeResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def deleteNode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/dataloader.DataLoader/deleteNode',
+            dataloader__pb2.IdRequest.SerializeToString,
+            dataloader__pb2.StatusResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

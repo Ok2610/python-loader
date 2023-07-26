@@ -222,9 +222,8 @@ ALTER TABLE ONLY public.nodes
 ALTER TABLE ONLY public.nodes
     ADD CONSTRAINT "FK_nodes_nodes_parentnode_id" FOREIGN KEY (parentnode_id) REFERENCES public.nodes(id) ON DELETE RESTRICT;
     
-
 ALTER TABLE ONLY public.nodes
-    ADD CONSTRAINT "FK_nodes_tags_tag_id" FOREIGN KEY (tag_id) REFERENCES public.tags(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT "FK_nodes_tags_tag_id" FOREIGN KEY (tag_id) REFERENCES public.tags(id) ON DELETE CASCADE;
 
 
 -- Setting up the tag types, then making the table read-only
