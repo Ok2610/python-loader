@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package dataloader;
+option go_package = "m3.dataloader/dataloader";
 
 service DataLoader {
   // Medias
@@ -21,12 +22,14 @@ service DataLoader {
 	rpc getTags(GetTagsRequest) returns (stream TagResponse) {};
 	rpc getTag(IdRequest) returns (TagResponse) {};
 	rpc createTag(CreateTagRequest) returns (TagResponse) {};
+  rpc createTagStream(stream CreateTagRequest) returns (stream TagResponse) {};
 
 	// Tagging
 	rpc getTaggings(EmptyRequest) returns (stream TaggingResponse) {};
   rpc getMediasWithTag(IdRequest) returns (RepeatedIdResponse) {};
   rpc getMediaTags(IdRequest) returns (RepeatedIdResponse) {};
 	rpc createTagging(CreateTaggingRequest) returns (TaggingResponse) {};
+  rpc createTaggingStream(stream CreateTaggingRequest) returns (stream CreateTaggingStreamResponse) {};
 
   // Hierarchies
 	rpc getHierarchies(GetHierarchiesRequest) returns (stream HierarchyResponse) {};
@@ -37,6 +40,7 @@ service DataLoader {
   rpc getNode (IdRequest) returns (NodeResponse) {};
   rpc getNodes (GetNodesRequest) returns (stream NodeResponse) {};
   rpc createNode (CreateNodeRequest) returns (NodeResponse) {};    
+  rpc createNodeStream (stream CreateNodeRequest) returns (stream NodeResponse) {};    
   rpc deleteNode (IdRequest) returns (StatusResponse) {}
   
   // Other
@@ -197,6 +201,11 @@ message CreateTaggingRequest {
 message TaggingResponse {
   Tagging tagging = 1;
 	string error_message = 2;
+}
+
+message CreateTaggingStreamResponse {  
+	int64 count = 1;
+  string error_message = 2;
 }
 
 // Hierarchies

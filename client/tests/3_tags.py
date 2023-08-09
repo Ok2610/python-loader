@@ -19,11 +19,11 @@ def test_cli():
 
     # Test 'get all tags' with empty DB
     result = runner.invoke(cli, ['get', 'tags'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
     
     # Test 'get tag' with id=1 with empty DB
     result = runner.invoke(cli, ['get', 'tag', '1'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     # Test 'add tag' with correct types and values
 
@@ -90,21 +90,21 @@ date {
 
     # Test if no copy tag has been added
     result = runner.invoke(cli, ['get', 'tag', '7'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
     
 
     # Test 'add tag' with various incorrect types
     result = runner.invoke(cli, ['add', 'tag', 'London', '3', '1'])
-    assert result.output.strip() == "Error: incorrect type for the specified Tagset."
+    assert result.output.strip() == "Failed to insert tag into database: pq: Tagtype_id does not match the corresponding tagset's tagtype_id"
 
     result = runner.invoke(cli, ['add', 'tag', '1234', '1', '5'])
-    assert result.output.strip() == "Error: incorrect type for the specified Tagset."
+    assert result.output.strip() == "Failed to insert tag into database: pq: Tagtype_id does not match the corresponding tagset's tagtype_id"
 
     result = runner.invoke(cli, ['add', 'tag', '1234', '2', '5'])
-    assert result.output.strip() == "Error: incorrect type for the specified Tagset."
+    assert result.output.strip() == "Failed to insert tag into database: pq: Tagtype_id does not match the corresponding tagset's tagtype_id"
 
     result = runner.invoke(cli, ['add', 'tag', '2022-01-17', '1', '4'])
-    assert result.output.strip() == "Error: incorrect type for the specified Tagset."
+    assert result.output.strip() == "Failed to insert tag into database: pq: Tagtype_id does not match the corresponding tagset's tagtype_id"
 
 
    # Test get methods

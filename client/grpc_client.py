@@ -6,7 +6,7 @@ import dataloader_pb2_grpc
 
 class LoaderClient:
     def __init__(self, grpc_host='localhost', grpc_port='50051') -> None:
-        self.grpc_channel = grpc.insecure_channel('%s:%s' % (grpc_host, grpc_port))
+        self.grpc_channel = grpc.insecure_channel(f'{grpc_host}:{grpc_port}')
         self.grpc_stub = dataloader_pb2_grpc.DataLoaderStub(self.grpc_channel)
 
     #!================ Media/media functions ======================================================================
@@ -217,6 +217,14 @@ class LoaderClient:
         return response.error_message if response.error_message \
         else response.tagging
     
+    def add_taggings(self, media_id, tag_ids):
+        def taggings_iterator(media_id, tag_ids):
+            for tag_id in tag_ids:
+                yield rpc_objects.CreateTaggingRequest(mediaId=media_id, tagId=tag_id)
+
+        for response in self.grpc_stub.createTaggingStream(taggings_iterator(media_id, tag_ids)):
+            yield response.error_message if response.error_message \
+            else response.count
 
     def get_medias_with_tag(self, id: int):
         request = rpc_objects.IdRequest(id=id)

@@ -30,25 +30,25 @@ def test_cli():
 
     # Test 'getters' with empty table
     result = runner.invoke(cli, ['get', 'hierarchies'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     result = runner.invoke(cli, ['get', 'hierarchy', '1'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     result = runner.invoke(cli, ['get', 'node', '1'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     result = runner.invoke(cli, ['get', 'nodes'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     result = runner.invoke(cli, ['get', 'nodes', '-h', '1'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     result = runner.invoke(cli, ['get', 'nodes', '-p', '1'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     result = runner.invoke(cli, ['get', 'nodes', '-t', '1'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
 
     # Add hierarchies

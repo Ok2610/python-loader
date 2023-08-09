@@ -28,23 +28,23 @@ def test_cli():
 
     # Test 'get all taggings' with empty table
     result = runner.invoke(cli, ['get', 'taggings'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     # Test 'get tags-of-media' with inexistant media ID
     result = runner.invoke(cli, ['get', 'tags-of-media', '11111'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     # Test 'get tags-of-media' with no tags attributed to media
     result = runner.invoke(cli, ['get', 'tags-of-media', '1'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     # Test 'get medias-with-tag' with inexistant tag ID
     result = runner.invoke(cli, ['get', 'medias-with-tag', '11111'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     # Test 'get medias-with-tag' with no medias linked to specified tag
     result = runner.invoke(cli, ['get', 'medias-with-tag', '1'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     # Add correct taggings
     result = runner.invoke(cli, ['add', 'tagging', '1', '1'])
@@ -81,23 +81,23 @@ def test_cli():
 
     # Test get tags of media id=1
     result = runner.invoke(cli, ['get', 'tags-of-media', '1'])
-    assert result.output.strip() == "1\n2\n3\n4\n5"
+    assert result.output.strip() == "[1, 2, 3, 4, 5]"
 
     # Test get tags of media id=2
     result = runner.invoke(cli, ['get', 'tags-of-media', '2'])
-    assert result.output.strip() == "5\n6"
+    assert result.output.strip() == "[5, 6]"
 
     # Test get medias with tag 1 (Location = Paris)
     result = runner.invoke(cli, ['get', 'medias-with-tag', '1'])
-    assert result.output.strip() == "1"
+    assert result.output.strip() == "[1]"
 
     # Test get medias with tag 5 (Resolution = 1080)
     result = runner.invoke(cli, ['get', 'medias-with-tag', '5'])
-    assert result.output.strip() == "1\n2"
+    assert result.output.strip() == "[1, 2]"
 
     # Test get medias with tag 6 (Resolution = 44100)
     result = runner.invoke(cli, ['get', 'medias-with-tag', '6'])
-    assert result.output.strip() == "2"
+    assert result.output.strip() == "[2]"
 
 
 if __name__ == '__main__':

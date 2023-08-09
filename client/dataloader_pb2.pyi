@@ -77,6 +77,14 @@ class CreateTaggingRequest(_message.Message):
     tagId: int
     def __init__(self, mediaId: _Optional[int] = ..., tagId: _Optional[int] = ...) -> None: ...
 
+class CreateTaggingStreamResponse(_message.Message):
+    __slots__ = ["count", "error_message"]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    ERROR_MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    count: int
+    error_message: str
+    def __init__(self, count: _Optional[int] = ..., error_message: _Optional[str] = ...) -> None: ...
+
 class DateValue(_message.Message):
     __slots__ = ["value"]
     VALUE_FIELD_NUMBER: _ClassVar[int]

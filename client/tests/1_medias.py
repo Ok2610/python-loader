@@ -14,14 +14,14 @@ def test_cli():
 
     # Test 'get all medias' with empty DB
     result = runner.invoke(cli, ['get', 'medias'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
     
     # Test 'get 1 media' with empty DB
     result = runner.invoke(cli, ['get', 'media', '-i', '1'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     result = runner.invoke(cli, ['get', 'media', '-u', 'anyURI'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     # Test 'add directory'
     result = runner.invoke(cli, ['add', 'medias', './testfiles'])
@@ -51,11 +51,11 @@ def test_cli():
 
     # Test 'get media' with unexistant ID
     result = runner.invoke(cli, ['get', 'media', '-i', '888'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     # Test 'get media' with unexistant uri
     result = runner.invoke(cli, ['get', 'media', '-u', 'C:/bonjour'])
-    assert result.output.strip() == "No results were fetched."
+    assert result.output.strip() == "No results were fetched"
 
     # Test 'get media' with ID 1
     result = runner.invoke(cli, ['get', 'media', '-i', '856'])

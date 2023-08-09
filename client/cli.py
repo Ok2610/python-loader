@@ -6,7 +6,10 @@ import re
 import datetime
 
 from grpc_client import LoaderClient
-from filemgmt import *
+from filemgmt.filehandler import FileHandler
+from filemgmt.json import JSONHandler
+from filemgmt.csv import CSVHandler
+from filemgmt.json_fast import FastJSONHandler
 
 
 client = LoaderClient(grpc_host='localhost', grpc_port='50051')
