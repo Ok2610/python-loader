@@ -11,7 +11,7 @@ import dataloader_pb2 as rpc_objects
 from dataloader_pb2_grpc import DataLoaderServicer, add_DataLoaderServicer_to_server
 
 MODE = "add"
-BATCH_SIZE = 50
+BATCH_SIZE = 5000
 
 
 class DataLoader(DataLoaderServicer):
@@ -787,6 +787,44 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             # print("[%s] -> %s" % (thread_id, str(e)))
             cursor.close()
             return rpc_objects.TaggingResponse(error_message=str(e))
+    
+    
+    def createTaggingStream(self, request_iterator, context):
+        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        request_counter = 0
+        sql = ""
+        data = ()
+        for request in request_iterator:
+            request_counter += 1
+            if request_counter % BATCH_SIZE == 1:
+                sql = "INSERT INTO public.objecttagrelations (object_id, tag_id) VALUES "
+                data = ()
+            sql += "(%s, %s)," 
+            data += (
+                request.mediaId,
+                request.tagId,
+            )
+            if request_counter % BATCH_SIZE == 0:
+                sql = sql[:-1] + ";"
+                try:
+                    cursor.execute(sql, data)
+                    self.conn.commit()
+                    response = rpc_objects.CreateTaggingStreamResponse(count=request_counter)
+                except Exception as e:
+                    response = rpc_objects.CreateTaggingStreamResponse(error_message=str(e))
+                yield response
+
+        if request_counter % BATCH_SIZE > 0:
+            sql = sql[:-1] + ";"
+            try:
+                cursor.execute(sql, data)
+                self.conn.commit()
+                response = rpc_objects.CreateTaggingStreamResponse(count=request_counter)
+            except Exception as e:
+                response = rpc_objects.CreateTaggingStreamResponse(error_message=str(e))
+            yield response
+            
+        cursor.close()
 
     #!================ Hierarchies  =======================================================================
 

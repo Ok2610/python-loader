@@ -22,7 +22,7 @@ service DataLoader {
 	rpc getTags(GetTagsRequest) returns (stream TagResponse) {};
 	rpc getTag(IdRequest) returns (TagResponse) {};
 	rpc createTag(CreateTagRequest) returns (TagResponse) {};
-  rpc createTagStream(stream CreateTagRequest) returns (stream TagResponse) {};
+  rpc createTagStream(stream CreateTagRequest) returns (stream CreateTagStreamResponse) {};
 
 	// Tagging
 	rpc getTaggings(EmptyRequest) returns (stream TaggingResponse) {};
@@ -185,6 +185,9 @@ message TagResponse {
   string error_message = 2;
 }
 
+message CreateTagStreamResponse {
+  map<int64, int64> id_map = 1;
+}
 
 // Tagging (mapped in table objecttagrelations)
 

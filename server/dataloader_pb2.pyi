@@ -69,6 +69,19 @@ class CreateTagSetRequest(_message.Message):
     tagTypeId: int
     def __init__(self, name: _Optional[str] = ..., tagTypeId: _Optional[int] = ...) -> None: ...
 
+class CreateTagStreamResponse(_message.Message):
+    __slots__ = ["id_map"]
+    class IdMapEntry(_message.Message):
+        __slots__ = ["key", "value"]
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: int
+        value: int
+        def __init__(self, key: _Optional[int] = ..., value: _Optional[int] = ...) -> None: ...
+    ID_MAP_FIELD_NUMBER: _ClassVar[int]
+    id_map: _containers.ScalarMap[int, int]
+    def __init__(self, id_map: _Optional[_Mapping[int, int]] = ...) -> None: ...
+
 class CreateTaggingRequest(_message.Message):
     __slots__ = ["mediaId", "tagId"]
     MEDIAID_FIELD_NUMBER: _ClassVar[int]
@@ -76,6 +89,14 @@ class CreateTaggingRequest(_message.Message):
     mediaId: int
     tagId: int
     def __init__(self, mediaId: _Optional[int] = ..., tagId: _Optional[int] = ...) -> None: ...
+
+class CreateTaggingStreamResponse(_message.Message):
+    __slots__ = ["count", "error_message"]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    ERROR_MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    count: int
+    error_message: str
+    def __init__(self, count: _Optional[int] = ..., error_message: _Optional[str] = ...) -> None: ...
 
 class DateValue(_message.Message):
     __slots__ = ["value"]

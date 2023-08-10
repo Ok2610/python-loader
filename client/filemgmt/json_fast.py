@@ -2,9 +2,10 @@ from filemgmt.filehandler import FileHandler
 import grpc_client
 import json
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from tqdm import tqdm
 import time
+import heapq
 
 class FastJSONHandler(FileHandler):
     
@@ -17,123 +18,131 @@ class FastJSONHandler(FileHandler):
                 tagset_id_map_lock = threading.Lock()
                 tag_id_map_lock = threading.Lock()
                 printlock = threading.Lock()
-                
-                tagsets = data.get('tagsets', [])
-                tagset_executor = ThreadPoolExecutor(max_workers=10)
-                tagsets_pbar = tqdm(total=len(tagsets), desc="Adding tagsets")
-                def processTagset(tagset_item):
-                    thread_client = grpc_client.LoaderClient()
-                    tagset_id = tagset_item.get('id')
-                    tagset_name = tagset_item.get('name')
-                    tagset_type = tagset_item.get('type')
-                    tagset_response = thread_client.add_tagset(tagset_name, tagset_type)
-                    if type(tagset_response) is str:
-                        printlock.acquire()
-                        print(f"Error adding tagset {tagset_name}: {tagset_response}")
-                        printlock.release()
-                        tagsets_pbar.update(1)
-                        return
+                with ThreadPoolExecutor(max_workers=10) as threadpool:
 
-                    tagset_id_map_lock.acquire()
-                    tagset_id_map[tagset_id] = (tagset_response.id, tagset_response.tagTypeId)
-                    tagset_id_map_lock.release()
-                    
-                    tags = tagset_item.get('tags')
-                    for tag_item in tags:
-                        value = tag_item.get('value') 
-                        tag_response = thread_client.add_tag(tagset_response.id, tagset_type, value)
-                        if type(tag_response) is str:
+                    #! TAGSETS and TAGS
+                    tagsets = sorted(data.get('tagsets', []), key= lambda tagset_item: -len(tagset_item.get('tags', [])))
+                    tagsets_pbar = tqdm(total=len(tagsets), desc="1- Adding tagsets", position=0)
+
+                    def processTagset(tagset_item):
+                        thread_client = grpc_client.LoaderClient()
+                        tagset_id = tagset_item.get('id')
+                        tagset_name = tagset_item.get('name')
+                        tagset_type = tagset_item.get('type')
+                        tagset_response = thread_client.add_tagset(tagset_name, tagset_type)
+                        if type(tagset_response) is str:
                             printlock.acquire()
-                            print(f"Invalid item in tagset {tagset_name} : {tag_response}")
+                            print(f"Error adding tagset {tagset_name}: {tagset_response}")
                             printlock.release()
+                            tagsets_pbar.update(1)
+                            return
+
+                        tagset_id_map_lock.acquire()
+                        tagset_id_map[tagset_id] = (tagset_response.id, tagset_response.tagTypeId)
+                        tagset_id_map_lock.release()
+                        
+                        tags = tagset_item.get('tags')
+                        for tag_item in tags:
+                            value = tag_item.get('value') 
+                            tag_response = thread_client.add_tag(tagset_response.id, tagset_type, value)
+                            if type(tag_response) is str:
+                                printlock.acquire()
+                                tqdm.write(f"Invalid item in tagset {tagset_name} : {tag_response}")
+                                printlock.release()
+                                continue
+                            tag_id_map_lock.acquire()
+                            tag_id_map[tag_item.get('id')] = tag_response.id    #type: ignore
+                            tag_id_map_lock.release()
+                        tagsets_pbar.update(1)
+                                    
+                    futures = []
+
+                    for tagset_item in tagsets:
+                        tqdm.write(f"{tagset_item.get('name')}")
+                        future = threadpool.submit(processTagset, tagset_item)
+                        futures.append(future)
+                    
+                    wait(futures)
+                    
+                    
+                    medias = sorted(data.get('medias', []), key= lambda media_item: -len(media_item.get('tags')))
+                    medias_pbar = tqdm(total=len(medias), desc="2- Adding medias", position=1)
+
+                    def processMedia(media_item):
+                        thread_client = grpc_client.LoaderClient()
+                        media_path = media_item.get('path')
+                        media_response = thread_client.add_file(media_path)
+                        if type(media_response) is str:
+                            printlock.acquire()
+                            tqdm.write(f"Couldn't add media {media_item}: {media_response}")
+                            printlock.release()
+                            medias_pbar.update(1)
+                            return
+                        tags = media_item.get('tags', [])
+                        response_iterator = thread_client.add_taggings(media_id=media_response.id, tag_ids=tags)
+                        for _ in response_iterator:
                             continue
-                        tag_id_map_lock.acquire()
-                        tag_id_map[tag_item.get('id')] = tag_response.id    #type: ignore
-                        tag_id_map_lock.release()
-                    tagsets_pbar.update(1)
-
-                for tagset_item in tagsets:
-                    tagset_executor.submit(processTagset, tagset_item)
-
-                tagset_executor.shutdown()
-                
-                
-                medias_executor = ThreadPoolExecutor(max_workers=10)
-                medias = data.get('medias', [])
-                medias_pbar = tqdm(total=len(medias), desc="Adding medias")
-
-                def processMedia(media_item):
-                    thread_client = grpc_client.LoaderClient()
-                    media_path = media_item.get('path')
-                    media_response = thread_client.add_file(media_path)
-                    if type(media_response) is str:
-                        printlock.acquire()
-                        print(f"Couldn't add media {media_item}: {media_response}")
-                        printlock.release()
+                        # for response in thread_client.add_taggings(media_id=media_response.id, tag_ids=tags):
+                        #     if type(response) is str:
+                        #         printlock.acquire()
+                        #         print(f"Couldn't add tagging : {response}")
+                        #         printlock.release()
                         medias_pbar.update(1)
-                        return
-                    tags = media_item.get('tags', [])
-                    response_iterator = thread_client.add_taggings(media_id=media_response.id, tag_ids=tags)
-                    for _ in response_iterator:
-                        continue
-                    # for response in thread_client.add_taggings(media_id=media_response.id, tag_ids=tags):
-                    #     if type(response) is str:
-                    #         printlock.acquire()
-                    #         print(f"Couldn't add tagging : {response}")
-                    #         printlock.release()
-                    medias_pbar.update(1)
 
-               
-                for media_item in medias:
-                    medias_executor.submit(processMedia, media_item)
+                    futures = []
+
+                    for media_item in medias:
+                        future = threadpool.submit(processMedia, media_item)
+                        futures.append(future)
+
+                    wait(futures)
+
+
+
+                    hierarchies = sorted(data.get('hierarchies', []), 
+                                         key= lambda item : -len(json.dumps(item))) 
+                    hierarchies_pbar = tqdm(total=len(hierarchies), desc="3- Adding hierarchies", position=2)
                 
-                medias_executor.shutdown()
+                    def processHierarchy(hierarchy_item):
+                        thread_client = grpc_client.LoaderClient()
+                        name = hierarchy_item.get('name')
+                        tagset_id = tagset_id_map[hierarchy_item.get('tagset_id')][0]
+                        hierarchy_response = thread_client.add_hierarchy(name, tagset_id)
+                        if type(hierarchy_response) is str:
+                            printlock.acquire()
+                            tqdm.write(f"Couldn't add hierarchy {name}: {hierarchy_response}")
+                            printlock.release()
+                            hierarchies_pbar.update(1)
+                            return
+                        hierarchy_id = hierarchy_response.id
 
-                hierarchies_executor = ThreadPoolExecutor(max_workers=10)
-                hierarchies = data.get('hierarchies', [])
-                hierarchies_pbar = tqdm(total=len(hierarchies), desc="Adding hierarchies")
-                
+                        def addNode(node, parentnode_id):
+                            tag_id = tag_id_map[node.get('tag_id')]
+                            if tag_id:
+                                new_node = thread_client.add_node(tag_id, hierarchy_id, parentnode_id)    # type: ignore
+                                child_nodes = node.get('child_nodes')
+                                for child_node_item in child_nodes:
+                                    addNode(child_node_item, new_node.id)
 
-                def processHierarchy(hierarchy_item):
-                    thread_client = grpc_client.LoaderClient()
-                    name = hierarchy_item.get('name')
-                    tagset_id = tagset_id_map[hierarchy_item.get('tagset_id')][0]
-                    hierarchy_response = thread_client.add_hierarchy(name, tagset_id)
-                    if type(hierarchy_response) is str:
-                        printlock.acquire()
-                        print(f"Couldn't add hierarchy {name}: {hierarchy_response}")
-                        printlock.release()
+                        
+                        rootnode_item = hierarchy_item.get('rootnode')
+                        rootnode_tag_id = tag_id_map[rootnode_item.get('tag_id')]
+                        if rootnode_tag_id:
+                            rootnode_id = thread_client.add_rootnode(rootnode_tag_id, hierarchy_response.id).id   # type: ignore
+                            child_nodes = rootnode_item.get('child_nodes')
+                            for child_node_item in child_nodes:                    
+                                addNode(child_node_item, rootnode_id)
                         hierarchies_pbar.update(1)
-                        return
-                    hierarchy_id = hierarchy_response.id
+                        
+                    futures = []
 
-                    def addNode(node, parentnode_id):
-                        tag_id = tag_id_map[node.get('tag_id')]
-                        if tag_id:
-                            new_node = thread_client.add_node(tag_id, hierarchy_id, parentnode_id)    # type: ignore
-                            child_nodes = node.get('child_nodes')
-                            for child_node_item in child_nodes:
-                                addNode(child_node_item, new_node.id)
+                    for hierarchy_item in hierarchies:
+                        tqdm.write(f"{hierarchy_item.get('name')}")
+                        future = threadpool.submit(processHierarchy, hierarchy_item)
+                        futures.append(future)
 
-                    
-                    rootnode_item = hierarchy_item.get('rootnode')
-                    rootnode_tag_id = tag_id_map[rootnode_item.get('tag_id')]
-                    if rootnode_tag_id:
-                        rootnode_id = thread_client.add_rootnode(rootnode_tag_id, hierarchy_response.id).id   # type: ignore
-                        child_nodes = rootnode_item.get('child_nodes')
-                        for child_node_item in child_nodes:                    
-                            addNode(child_node_item, rootnode_id)
-                    hierarchies_pbar.update(1)
-                    
+                    wait(futures)
 
-
-                for hierarchy in hierarchies:
-                    hierarchies_executor.submit(processHierarchy, hierarchy)
-
-                hierarchies_executor.shutdown()
-
-            
-            # print(f"Successfully imported data from JSON file {path}")
 
         except FileNotFoundError:
             print(f"File not found: {path}")
