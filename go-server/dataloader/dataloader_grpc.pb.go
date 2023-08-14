@@ -127,7 +127,7 @@ func (c *dataLoaderClient) CreateMedia(ctx context.Context, in *CreateMediaReque
 }
 
 func (c *dataLoaderClient) CreateMedias(ctx context.Context, opts ...grpc.CallOption) (DataLoader_CreateMediasClient, error) {
-	stream, err := c.cc.NewStream(ctx, &DataLoader_ServiceDesc.Streams[1], "/dataloader.DataLoader/createMedias", opts...)
+	stream, err := c.cc.NewStream(ctx, &DataLoader_ServiceDesc.Streams[1], "/dataloader.DataLoader/createMediaStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1329,7 +1329,7 @@ var DataLoader_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "createMedias",
+			StreamName:    "createMediaStream",
 			Handler:       _DataLoader_CreateMedias_Handler,
 			ServerStreams: true,
 			ClientStreams: true,

@@ -9,7 +9,7 @@ service DataLoader {
   rpc getMediaById (IdRequest) returns (MediaResponse) {}
 	rpc getMediaByURI (GetMediaByURIRequest) returns (MediaResponse) {}
   rpc createMedia (CreateMediaRequest) returns (MediaResponse) {}
-  rpc createMedias (stream CreateMediaRequest) returns (stream CreateMediaStreamResponse) {} 
+  rpc createMediaStream (stream CreateMediaRequest) returns (stream CreateMediaStreamResponse) {} 
   rpc deleteMedia (IdRequest) returns (StatusResponse) {}
 
 	// TagSets
@@ -22,7 +22,7 @@ service DataLoader {
 	rpc getTags(GetTagsRequest) returns (stream TagResponse) {};
 	rpc getTag(IdRequest) returns (TagResponse) {};
 	rpc createTag(CreateTagRequest) returns (TagResponse) {};
-  rpc createTagStream(stream CreateTagRequest) returns (stream CreateTagStreamResponse) {};
+  rpc createTagStream(stream CreateTagStreamRequest) returns (CreateTagStreamResponse) {};
 
 	// Tagging
 	rpc getTaggings(EmptyRequest) returns (stream TaggingResponse) {};
@@ -68,7 +68,7 @@ message RepeatedIdResponse {
   string error_message = 2;
 }
 
-// Media / cubeobjects
+// Media / medias
 
 message Media {
 	int64 id = 1;
@@ -185,11 +185,25 @@ message TagResponse {
   string error_message = 2;
 }
 
-message CreateTagStreamResponse {
-  map<int64, int64> id_map = 1;
+message CreateTagStreamRequest {
+  int64 tagId = 1;
+  int64 tagSetId = 2;
+  int64 tagTypeId = 3;
+  oneof value {
+    AlphanumericalValue alphanumerical = 4;
+    TimeStampValue timestamp = 5;
+    TimeValue time = 6;
+    DateValue date = 7;
+    NumericalValue numerical = 8;
+  }
 }
 
-// Tagging (mapped in table objecttagrelations)
+message CreateTagStreamResponse {
+  map<int64, int64> id_map = 1;
+  string error_message = 2;
+}
+
+// Tagging (mapped in table taggings)
 
 message Tagging {
   int64 mediaId = 1;

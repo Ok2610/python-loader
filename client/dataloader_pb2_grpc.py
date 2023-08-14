@@ -34,8 +34,8 @@ class DataLoaderStub(object):
                 request_serializer=dataloader__pb2.CreateMediaRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.MediaResponse.FromString,
                 )
-        self.createMedias = channel.stream_stream(
-                '/dataloader.DataLoader/createMedias',
+        self.createMediaStream = channel.stream_stream(
+                '/dataloader.DataLoader/createMediaStream',
                 request_serializer=dataloader__pb2.CreateMediaRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.CreateMediaStreamResponse.FromString,
                 )
@@ -79,10 +79,10 @@ class DataLoaderStub(object):
                 request_serializer=dataloader__pb2.CreateTagRequest.SerializeToString,
                 response_deserializer=dataloader__pb2.TagResponse.FromString,
                 )
-        self.createTagStream = channel.stream_stream(
+        self.createTagStream = channel.stream_unary(
                 '/dataloader.DataLoader/createTagStream',
-                request_serializer=dataloader__pb2.CreateTagRequest.SerializeToString,
-                response_deserializer=dataloader__pb2.TagResponse.FromString,
+                request_serializer=dataloader__pb2.CreateTagStreamRequest.SerializeToString,
+                response_deserializer=dataloader__pb2.CreateTagStreamResponse.FromString,
                 )
         self.getTaggings = channel.unary_stream(
                 '/dataloader.DataLoader/getTaggings',
@@ -184,7 +184,7 @@ class DataLoaderServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def createMedias(self, request_iterator, context):
+    def createMediaStream(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -357,8 +357,8 @@ def add_DataLoaderServicer_to_server(servicer, server):
                     request_deserializer=dataloader__pb2.CreateMediaRequest.FromString,
                     response_serializer=dataloader__pb2.MediaResponse.SerializeToString,
             ),
-            'createMedias': grpc.stream_stream_rpc_method_handler(
-                    servicer.createMedias,
+            'createMediaStream': grpc.stream_stream_rpc_method_handler(
+                    servicer.createMediaStream,
                     request_deserializer=dataloader__pb2.CreateMediaRequest.FromString,
                     response_serializer=dataloader__pb2.CreateMediaStreamResponse.SerializeToString,
             ),
@@ -402,10 +402,10 @@ def add_DataLoaderServicer_to_server(servicer, server):
                     request_deserializer=dataloader__pb2.CreateTagRequest.FromString,
                     response_serializer=dataloader__pb2.TagResponse.SerializeToString,
             ),
-            'createTagStream': grpc.stream_stream_rpc_method_handler(
+            'createTagStream': grpc.stream_unary_rpc_method_handler(
                     servicer.createTagStream,
-                    request_deserializer=dataloader__pb2.CreateTagRequest.FromString,
-                    response_serializer=dataloader__pb2.TagResponse.SerializeToString,
+                    request_deserializer=dataloader__pb2.CreateTagStreamRequest.FromString,
+                    response_serializer=dataloader__pb2.CreateTagStreamResponse.SerializeToString,
             ),
             'getTaggings': grpc.unary_stream_rpc_method_handler(
                     servicer.getTaggings,
@@ -556,7 +556,7 @@ class DataLoader(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def createMedias(request_iterator,
+    def createMediaStream(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -566,7 +566,7 @@ class DataLoader(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/dataloader.DataLoader/createMedias',
+        return grpc.experimental.stream_stream(request_iterator, target, '/dataloader.DataLoader/createMediaStream',
             dataloader__pb2.CreateMediaRequest.SerializeToString,
             dataloader__pb2.CreateMediaStreamResponse.FromString,
             options, channel_credentials,
@@ -719,9 +719,9 @@ class DataLoader(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/dataloader.DataLoader/createTagStream',
-            dataloader__pb2.CreateTagRequest.SerializeToString,
-            dataloader__pb2.TagResponse.FromString,
+        return grpc.experimental.stream_unary(request_iterator, target, '/dataloader.DataLoader/createTagStream',
+            dataloader__pb2.CreateTagStreamRequest.SerializeToString,
+            dataloader__pb2.CreateTagStreamResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

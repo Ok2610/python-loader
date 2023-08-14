@@ -1,4 +1,4 @@
-INSERT INTO public.cubeobjects (file_uri, file_type, thumbnail_uri)
+INSERT INTO public.medias (file_uri, file_type, thumbnail_uri)
 VALUES
 ('201901/01/20190101_103717_000.jpg', 0, '201901/01/20190101_103717_000.jpg'),
 ('201901/01/20190101_103749_000.jpg', 0, '201901/01/20190101_103749_000.jpg'),

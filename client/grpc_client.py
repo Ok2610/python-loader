@@ -42,7 +42,7 @@ class LoaderClient:
     def add_dir(self, directory: str, formats):
     # Add files from a specified directory to the database.
         file_count = 0
-        def add_media_requests_generator(directory: str):
+        def add_media_requests_generator():
             nonlocal file_count
             for file in os.listdir(directory):
                 if any(file.endswith('.' + ext) for ext in formats):
@@ -64,7 +64,7 @@ class LoaderClient:
                     yield request
         
        
-        response_iterator = self.grpc_stub.createMedias(add_media_requests_generator(directory))
+        response_iterator = self.grpc_stub.createMediaStream(add_media_requests_generator())
         for response in response_iterator:
             yield response.error_message if response.error_message \
             else 'Info: added %d medias to database.' % (response.count)
@@ -190,12 +190,54 @@ class LoaderClient:
             case _:
                 return 'Error : Not a valid tag type. Range is [1:5]'
             
-        response = self.grpc_stub.createTag(request)
+    def add_tags(self, tagset_id: int, tagtype_id: int, tags:list[dict]):
+        def tags_iterator():
+            for tag_item in tags:
+                match tagtype_id:
+                    case 1:
+                        yield rpc_objects.CreateTagStreamRequest(
+                            tagId=tag_item.get('id'),
+                            tagSetId=tagset_id,
+                            tagTypeId=tagtype_id,
+                            alphanumerical = rpc_objects.AlphanumericalValue(value=str(tag_item.get('value')))
+                        )
+                    case 2:
+                        yield rpc_objects.CreateTagStreamRequest(
+                            tagId=tag_item.get('id'),
+                            tagSetId=tagset_id,
+                            tagTypeId=tagtype_id,
+                            timestamp = rpc_objects.TimeStampValue(value=str(tag_item.get('value')))
+                        )
+                    case 3:
+                        yield rpc_objects.CreateTagStreamRequest(
+                            tagId=tag_item.get('id'),
+                            tagSetId=tagset_id,
+                            tagTypeId=tagtype_id,
+                            time = rpc_objects.TimeValue(value=str(tag_item.get('value')))
+                        )
+                    case 4:
+                        yield rpc_objects.CreateTagStreamRequest(
+                            tagId=tag_item.get('id'),
+                            tagSetId=tagset_id,
+                            tagTypeId=tagtype_id,
+                            date = rpc_objects.DateValue(value=str(tag_item.get('value')))
+                        )
+                    case 5:
+                        yield rpc_objects.CreateTagStreamRequest(
+                            tagId=tag_item.get('id'),
+                            tagSetId=tagset_id,
+                            tagTypeId=tagtype_id,
+                            numerical = rpc_objects.NumericalValue(value=tag_item.get('value'))
+                        )
+                    case _:
+                        return "Error: wrong type %d" % tagtype_id
+                    
+        response = self.grpc_stub.createTagStream(tags_iterator())
         return response.error_message if response.error_message \
-        else response.tag
+        else response.id_map
     
-    def get_tag(self, id: int):
-        request = rpc_objects.IdRequest(id=id)
+    def get_tag(self, tag_id: int):
+        request = rpc_objects.IdRequest(id=tag_id)
         response = self.grpc_stub.getTag(request)
         return response.error_message if response.error_message \
         else response.tag
@@ -218,11 +260,11 @@ class LoaderClient:
         else response.tagging
     
     def add_taggings(self, media_id, tag_ids):
-        def taggings_iterator(media_id, tag_ids):
+        def taggings_iterator():
             for tag_id in tag_ids:
                 yield rpc_objects.CreateTaggingRequest(mediaId=media_id, tagId=tag_id)
 
-        for response in self.grpc_stub.createTaggingStream(taggings_iterator(media_id, tag_ids)):
+        for response in self.grpc_stub.createTaggingStream(taggings_iterator()):
             yield response.error_message if response.error_message \
             else response.count
 

@@ -2611,7 +2611,7 @@ var file_dataloader_proto_depIdxs = []int32{
 	2,  // 18: dataloader.DataLoader.getMediaById:input_type -> dataloader.IdRequest
 	7,  // 19: dataloader.DataLoader.getMediaByURI:input_type -> dataloader.GetMediaByURIRequest
 	8,  // 20: dataloader.DataLoader.createMedia:input_type -> dataloader.CreateMediaRequest
-	8,  // 21: dataloader.DataLoader.createMedias:input_type -> dataloader.CreateMediaRequest
+	8,  // 21: dataloader.DataLoader.createMediaStream:input_type -> dataloader.CreateMediaRequest
 	2,  // 22: dataloader.DataLoader.deleteMedia:input_type -> dataloader.IdRequest
 	12, // 23: dataloader.DataLoader.getTagSets:input_type -> dataloader.GetTagSetsRequest
 	2,  // 24: dataloader.DataLoader.getTagSetById:input_type -> dataloader.IdRequest
@@ -2639,7 +2639,7 @@ var file_dataloader_proto_depIdxs = []int32{
 	9,  // 46: dataloader.DataLoader.getMediaById:output_type -> dataloader.MediaResponse
 	9,  // 47: dataloader.DataLoader.getMediaByURI:output_type -> dataloader.MediaResponse
 	9,  // 48: dataloader.DataLoader.createMedia:output_type -> dataloader.MediaResponse
-	10, // 49: dataloader.DataLoader.createMedias:output_type -> dataloader.CreateMediaStreamResponse
+	10, // 49: dataloader.DataLoader.createMediaStream:output_type -> dataloader.CreateMediaStreamResponse
 	1,  // 50: dataloader.DataLoader.deleteMedia:output_type -> dataloader.StatusResponse
 	15, // 51: dataloader.DataLoader.getTagSets:output_type -> dataloader.TagSetResponse
 	15, // 52: dataloader.DataLoader.getTagSetById:output_type -> dataloader.TagSetResponse

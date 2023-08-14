@@ -69,8 +69,28 @@ class CreateTagSetRequest(_message.Message):
     tagTypeId: int
     def __init__(self, name: _Optional[str] = ..., tagTypeId: _Optional[int] = ...) -> None: ...
 
+class CreateTagStreamRequest(_message.Message):
+    __slots__ = ["alphanumerical", "date", "numerical", "tagId", "tagSetId", "tagTypeId", "time", "timestamp"]
+    ALPHANUMERICAL_FIELD_NUMBER: _ClassVar[int]
+    DATE_FIELD_NUMBER: _ClassVar[int]
+    NUMERICAL_FIELD_NUMBER: _ClassVar[int]
+    TAGID_FIELD_NUMBER: _ClassVar[int]
+    TAGSETID_FIELD_NUMBER: _ClassVar[int]
+    TAGTYPEID_FIELD_NUMBER: _ClassVar[int]
+    TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
+    TIME_FIELD_NUMBER: _ClassVar[int]
+    alphanumerical: AlphanumericalValue
+    date: DateValue
+    numerical: NumericalValue
+    tagId: int
+    tagSetId: int
+    tagTypeId: int
+    time: TimeValue
+    timestamp: TimeStampValue
+    def __init__(self, tagId: _Optional[int] = ..., tagSetId: _Optional[int] = ..., tagTypeId: _Optional[int] = ..., alphanumerical: _Optional[_Union[AlphanumericalValue, _Mapping]] = ..., timestamp: _Optional[_Union[TimeStampValue, _Mapping]] = ..., time: _Optional[_Union[TimeValue, _Mapping]] = ..., date: _Optional[_Union[DateValue, _Mapping]] = ..., numerical: _Optional[_Union[NumericalValue, _Mapping]] = ...) -> None: ...
+
 class CreateTagStreamResponse(_message.Message):
-    __slots__ = ["id_map"]
+    __slots__ = ["error_message", "id_map"]
     class IdMapEntry(_message.Message):
         __slots__ = ["key", "value"]
         KEY_FIELD_NUMBER: _ClassVar[int]
@@ -78,9 +98,11 @@ class CreateTagStreamResponse(_message.Message):
         key: int
         value: int
         def __init__(self, key: _Optional[int] = ..., value: _Optional[int] = ...) -> None: ...
+    ERROR_MESSAGE_FIELD_NUMBER: _ClassVar[int]
     ID_MAP_FIELD_NUMBER: _ClassVar[int]
+    error_message: str
     id_map: _containers.ScalarMap[int, int]
-    def __init__(self, id_map: _Optional[_Mapping[int, int]] = ...) -> None: ...
+    def __init__(self, id_map: _Optional[_Mapping[int, int]] = ..., error_message: _Optional[str] = ...) -> None: ...
 
 class CreateTaggingRequest(_message.Message):
     __slots__ = ["mediaId", "tagId"]
