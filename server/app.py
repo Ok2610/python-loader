@@ -32,13 +32,13 @@ class DataLoader(DataLoaderServicer):
         data = cursor.fetchone()
         print("Connection established to: ", data)
         
-        # ! Script to add tag_types to Tagsets table (on the original schema, they are only present in the Tags table)
-        try:
-            cursor.execute(open("update_db_tables.sql", "r").read())
-            print("DB has been updated")
-        except Exception as e:
-            print("Error updating DB:" % repr(e))
-        cursor.close()
+        # ! Uncomment to update the old schema with the new namings, triggers and tag_type in the tagsets table
+        # try:
+        #     cursor.execute(open("update_db_tables.sql", "r").read())
+        #     print("DB has been updated")
+        # except Exception as e:
+        #     print("Error updating DB:" % repr(e))
+        # cursor.close()
 
     def __del__(self):
         self.conn.close()

@@ -148,7 +148,7 @@ CREATE INDEX "IX_nodes_tag_id" ON public.nodes USING btree (tag_id);
 
 ------------------------------------------------------------------------- Tagsets
 ALTER TABLE ONLY public.tagsets
-    ADD CONSTRAINT "FK_tagsests_tag_types_tagtype_id" FOREIGN KEY (tagtype_id) REFERENCES public.tag_types(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT "FK_tagsets_tag_types_tagtype_id" FOREIGN KEY (tagtype_id) REFERENCES public.tag_types(id) ON DELETE RESTRICT;
 
 
 ------------------------------------------------------------------------- Tags

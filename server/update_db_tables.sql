@@ -1,12 +1,28 @@
 -- Execute these scripts to update the old schema and make it compatible with the dataloader
 
 -- Rename tables
-ALTER TABLE public.cubeobjects RENAME TO public.medias;
-ALTER TABLE public.objecttagrelations RENAME TO public.taggings;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'medias') THEN  
+        ALTER TABLE public.cubeobjects RENAME TO medias;
+    END IF;
+	IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'taggings') THEN  
+        ALTER TABLE public.objecttagrelations RENAME TO taggings;
+    END IF;	
+END$$;
 
 -- Add the tag types to the tagsets table
-ALTER TABLE public.tagsets ADD COLUMN tagtype_id integer;
-ALTER TABLE public.tagsets ADD CONSTRAINT "FK_tagsests_tag_types_tagtype_id" FOREIGN KEY (tagtype_id) REFERENCES public.tag_types(id) ON DELETE CASCADE;
+ALTER TABLE public.tagsets ADD COLUMN IF NOT EXISTS tagtype_id integer;
+
+DO $$
+begin
+IF NOT EXISTS (select 1 
+				   from information_schema.constraint_column_usage 
+				   where table_name = 'tag_types'  and constraint_name = 'FK_tagsets_tag_types_tagtype_id') THEN
+        ALTER TABLE public.tagsets ADD CONSTRAINT "FK_tagsets_tag_types_tagtype_id" FOREIGN KEY (tagtype_id) REFERENCES public.tag_types(id) ON DELETE RESTRICT;
+	END IF;
+END$$;
+
 
 UPDATE public.tagsets AS ts
 SET tagtype_id = (
@@ -17,7 +33,7 @@ SET tagtype_id = (
 );
 
 
--- Check that the type of tags correspond to the type of the tagset
+-- Trigger to check that the type of tags correspond to the type of the tagset
 CREATE OR REPLACE FUNCTION public.check_matching_tagtype()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -28,12 +44,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER check_tagtype_matching
+CREATE OR REPLACE TRIGGER check_tagtype_matching
 BEFORE INSERT OR UPDATE ON public.tags
 FOR EACH ROW
 EXECUTE FUNCTION public.check_matching_tagtype();
 
--- Check that the tag belongs the the tagset of the hierachy
+-- Trigger to check, when creating a node, that the associated tag belongs to the tagset of the hierachy
 CREATE OR REPLACE FUNCTION public.check_nodes_tagset()
 RETURNS TRIGGER AS
 $$
@@ -54,7 +70,7 @@ END;
 $$
 LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_check_nodes_tagset
+CREATE OR REPLACE TRIGGER trigger_check_nodes_tagset
 BEFORE INSERT OR UPDATE ON public.nodes
 FOR EACH ROW
 EXECUTE FUNCTION public.check_nodes_tagset();
