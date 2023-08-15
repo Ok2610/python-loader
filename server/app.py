@@ -161,7 +161,6 @@ class DataLoader(DataLoaderServicer):
             data = (request.media.file_uri, request.media.file_type, request.media.thumbnail_uri)
             cursor.execute(sql, data)
             response = cursor.fetchall()[0]
-            self.conn.commit()
             return rpc_objects.MediaResponse(
                 media=rpc_objects.Media(
                     id=response['id'],
@@ -202,7 +201,6 @@ class DataLoader(DataLoaderServicer):
                 sql = sql[:-1] + ";"
                 try:
                     cursor.execute(sql, data)
-                    self.conn.commit()
                     yield rpc_objects.CreateMediaStreamResponse(count=request_counter)
                 except Exception as e:
                     yield rpc_objects.CreateMediaStreamResponse(error_message=repr(e))
@@ -215,7 +213,6 @@ class DataLoader(DataLoaderServicer):
             sql = sql[:-1] + ";"
             try:
                 cursor.execute(sql, data)
-                self.conn.commit()
                 response = rpc_objects.CreateMediaStreamResponse(count=request_counter)
             except Exception as e:
                 response = rpc_objects.CreateMediaStreamResponse(error_message=repr(e))
@@ -235,9 +232,7 @@ class DataLoader(DataLoaderServicer):
         try:
             sql = "DELETE FROM public.medias WHERE id=%d;" % request.id
             cursor.execute(sql)
-            if cursor.rowcount > 0:
-                self.conn.commit()
-            else:
+            if cursor.rowcount == 0:
                 raise Exception("Element not found")
             
         except Exception as e:
@@ -372,7 +367,6 @@ class DataLoader(DataLoaderServicer):
             data = (request.name, request.tagTypeId)
             cursor.execute(sql, data)
             inserted_tagset = cursor.fetchall()[0] 
-            self.conn.commit()
             return rpc_objects.TagSetResponse(
                 tagset=rpc_objects.TagSet(
                     id= inserted_tagset['id'],
@@ -963,7 +957,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                 sql = sql[:-1] + ";"
                 try:
                     cursor.execute(sql, data)
-                    self.conn.commit()
                     response = rpc_objects.CreateTaggingStreamResponse(count=request_counter)
                 except Exception as e:
                     response = rpc_objects.CreateTaggingStreamResponse(error_message=repr(e))
@@ -976,7 +969,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             sql = sql[:-1] + ";"
             try:
                 cursor.execute(sql, data)
-                self.conn.commit()
                 response = rpc_objects.CreateTaggingStreamResponse(count=request_counter)
             except Exception as e:
                 response = rpc_objects.CreateTaggingStreamResponse(error_message=repr(e))
@@ -1045,6 +1037,7 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
 
     def createHierarchy(self, request: rpc_objects.CreateHierarchyRequest, context) -> rpc_objects.HierarchyResponse:
     # Create hierarchy with the given name and tagset_id, or returns it if already existent
+
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received createHierarchy request with name = %s" % (thread_id, request.name))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -1077,32 +1070,9 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
 
 
     #!================ Nodes ==============================================================================
-    def getNode(self, request: rpc_objects.IdRequest, context) -> rpc_objects.NodeResponse:
-        # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
-        # print("[%s] Received getNode request with id=%d" % (thread_id, request.id))
-        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        try:
-            sql = """SELECT * FROM public.nodes WHERE id=%d""" % request.id
-            cursor.execute(sql)
-            if cursor.rowcount == 0 : raise Exception("No results were fetched")
-            result = cursor.fetchall()[0]
-            return rpc_objects.NodeResponse(
-                node=rpc_objects.Node(
-                    id=result['id'],
-                    tagId=result['tag_id'],
-                    hierarchyId=result['hierarchy_id'],
-                    parentNodeId=result['parentnode_id']
-                )
-            )
-        except Exception as e:
-            # print("[%s] -> %s" % (thread_id, repr(e)))
-            return rpc_objects.NodeResponse(error_message=repr(e))   
-        
-        finally:    # Runs before the return of each section
-            cursor.close()  
-
-
     def getNodes(self, request: rpc_objects.GetNodesRequest, context) :
+    # Get all the nodes stored in DB, with optional hierarchy, tag or parent node filters
+
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         # print("[%s] Received getNodes request" % (thread_id))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -1137,6 +1107,33 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
         
         finally:
             cursor.close()
+
+
+    def getNode(self, request: rpc_objects.IdRequest, context) -> rpc_objects.NodeResponse:
+    # Get a single node with the given ID
+
+        # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
+        # print("[%s] Received getNode request with id=%d" % (thread_id, request.id))
+        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        try:
+            sql = """SELECT * FROM public.nodes WHERE id=%d""" % request.id
+            cursor.execute(sql)
+            if cursor.rowcount == 0 : raise Exception("No results were fetched")
+            result = cursor.fetchall()[0]
+            return rpc_objects.NodeResponse(
+                node=rpc_objects.Node(
+                    id=result['id'],
+                    tagId=result['tag_id'],
+                    hierarchyId=result['hierarchy_id'],
+                    parentNodeId=result['parentnode_id']
+                )
+            )
+        except Exception as e:
+            # print("[%s] -> %s" % (thread_id, repr(e)))
+            return rpc_objects.NodeResponse(error_message=repr(e))   
+        
+        finally:    # Runs before the return of each section
+            cursor.close()  
 
 
     def createNode(self, request: rpc_objects.CreateNodeRequest, context) -> rpc_objects.NodeResponse :
@@ -1220,29 +1217,56 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                 cursor.close()
 
     def deleteNode(self, request: rpc_objects.IdRequest, context) -> rpc_objects.StatusResponse:
-        # The current behaviour enforced by the DB rules is that you cannot delete a node with childs,
-        # or the rootnode of a hierarchy
+    # Delete a single node with a given ID. The process is as follows:
+    # 
+    # RootNode ----- ParentNode ---- *NodeToRemove* ---- ChildNodes
+    # PROCESS: 
+    # NodeToRemove has a parent node ?
+    #     YES: Get the ChildNodes and set their parent node to the parent node of NodeToRemove if they exist
+    #     NO: NodeToRemove is RootNode. count(childNodes) = 1 ? YES: set new rootnode to ChildNode | NO: throw an error
+    # Delete NodeToRemove
+
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received deleteNode request with id=%d" % (thread_id, request.id))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
+            sql = "SELECT parentnode_id FROM public.nodes WHERE id = %d" % request.id
+            cursor.execute(sql)
+            if cursor.rowcount == 0:
+                raise Exception("Element not found")
+            node_to_remove_parentnode_id = cursor.fetchall()[0]['parentnode_id']
+            if node_to_remove_parentnode_id is not None:
+                sql = "UPDATE public.nodes SET parentnode_id = %d WHERE parentnode_id = %d" % (node_to_remove_parentnode_id, request.id)
+                cursor.execute(sql)
+            else:
+                sql = "SELECT id FROM public.nodes WHERE parentnode_id = %d" % request.id
+                cursor.execute(sql)
+                if cursor.rowcount > 1:
+                    raise Exception("Cannot delete rootnode with mutiple children. Please delete children first until there is a single child left.")
+                if cursor.rowcount == 0:
+                    sql = "UPDATE public.hierarchies SET rootnode_id = NULL WHERE rootnode_id = %d" % request.id
+                    cursor.execute(sql)
+                if cursor.rowcount == 1:
+                    singlechild_id = cursor.fetchall()[0]['id']
+                    sql = """UPDATE public.hierarchies SET rootnode_id = %d WHERE rootnode_id = %d;
+UPDATE public.nodes SET parentnode_id = NULL WHERE id = %d;""" % (singlechild_id, request.id, singlechild_id)
+                    cursor.execute(sql)
+
             sql = "DELETE FROM public.nodes WHERE id=%d;" % request.id
             cursor.execute(sql)
-            if cursor.rowcount > 0:
-                self.conn.commit()
-                return rpc_objects.StatusResponse()
-            else:
-                raise Exception("Element not found")
+            return rpc_objects.StatusResponse()
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
             return rpc_objects.StatusResponse(error_message=repr(e))
+        
         finally:
             cursor.close()
         
 
     #!================ DB Management ======================================================================
     def resetDatabase(self, request: rpc_objects.EmptyRequest, context) -> rpc_objects.StatusResponse:
-        # Reads and executes the DDL, which does 2 things: drop the schemas, and recreate all the tables and rules
+    # Reads and executes the DDL, which does 2 things: drop the schemas, and recreate all the tables and rules
+
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received ResetDatabase request" % thread_id)
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)

@@ -40,14 +40,14 @@ service DataLoader {
 	rpc getHierarchies(GetHierarchiesRequest) returns (stream HierarchyResponse) {};  // Get all the hierarchies stored in DB, with optional tagset filter
   rpc getHierarchy(IdRequest) returns (HierarchyResponse) {};                       // Get a single hierarchy with the given ID
 	rpc createHierarchy(CreateHierarchyRequest) returns (HierarchyResponse) {};       // Create hierarchy with the given name and tagset_id, 
-                                                                                    // or returns it if already existent
+                                                                                    // or get it if already existent
   
   // -------------------------- Nodes
-  rpc getNode (IdRequest) returns (NodeResponse) {};
-  rpc getNodes (GetNodesRequest) returns (stream NodeResponse) {};
-  rpc createNode (CreateNodeRequest) returns (NodeResponse) {};    
-  rpc createNodeStream (stream CreateNodeRequest) returns (stream NodeResponse) {};    
-  rpc deleteNode (IdRequest) returns (StatusResponse) {}
+  rpc getNodes (GetNodesRequest) returns (stream NodeResponse) {};  // Get all the nodes stored in DB, with optional hierarchy, tag or parent node filters
+  rpc getNode (IdRequest) returns (NodeResponse) {};                // Get a single node with the given ID
+  rpc createNode (CreateNodeRequest) returns (NodeResponse) {};     // Create or get a single node
+  rpc createNodeStream (stream CreateNodeRequest) returns (stream NodeResponse) {};    // NOT IMPLEMENTED
+  rpc deleteNode (IdRequest) returns (StatusResponse) {}            // Delete a single node with the given ID
   
   // Other
 	rpc resetDatabase (EmptyRequest) returns (StatusResponse) {};
