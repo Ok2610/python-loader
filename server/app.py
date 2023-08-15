@@ -14,8 +14,8 @@ BATCH_SIZE = 5000
 
 
 class DataLoader(DataLoaderServicer):
-    # The DataLoader class is the implementation of the GRPC dataloader server
-    # It implements all the functions defined in the Protobuf file dataloader.proto
+# The DataLoader class is the implementation of the GRPC dataloader server
+# It implements all the functions defined in the Protobuf file dataloader.proto
 
     def __init__(self) -> None:
         super().__init__()
@@ -45,56 +45,9 @@ class DataLoader(DataLoaderServicer):
 
 
     #!================ Medias =============================================================================
-    def getMediaById(self, request: rpc_objects.IdRequest, context) -> rpc_objects.MediaResponse:
-        thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
-        print("[%s] Received getMediaById request with id=%d" % (thread_id, request.id))
-        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        try:
-            sql = "SELECT * FROM public.medias WHERE id=%d" % request.id
-            cursor.execute(sql)
-            if cursor.rowcount == 0: raise Exception("No results were fetched")
-            result = cursor.fetchall()[0]
-            cursor.close()
-            return rpc_objects.MediaResponse(
-                media=rpc_objects.Media(
-                        id= result["id"],
-                        file_uri= result["file_uri"],
-                        file_type= result["file_type"],
-                        thumbnail_uri= result["thumbnail_uri"]
-                    )
-            )
-        except Exception as e:
-            print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
-            return rpc_objects.MediaResponse(error_message=repr(e))
-
-
-    def getMediaByURI(self, request: rpc_objects.GetMediaByURIRequest, context) -> rpc_objects.MediaResponse:
-        thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
-        print("[%s] Received getMediaIdFromURI request with URI=%s" % (thread_id, request.file_uri))
-        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        try:
-            sql = "SELECT * FROM public.medias WHERE file_uri=%s"
-            data = (request.file_uri,)  # The comma is to make it a tuple with one element
-            cursor.execute(sql, data)
-            if cursor.rowcount == 0: raise Exception("No results were fetched")
-            result = cursor.fetchall()[0]
-            cursor.close()
-            return rpc_objects.MediaResponse(
-                media=rpc_objects.Media(
-                        id= result["id"],
-                        file_uri= result["file_uri"],
-                        file_type= result["file_type"],
-                        thumbnail_uri= result["thumbnail_uri"]
-                    )
-            )
-        except Exception as e:
-            print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
-            return rpc_objects.MediaResponse(error_message=repr(e))
-
-
     def getMedias(self, request: rpc_objects.GetMediasRequest, context):
+    # Get all the medias stored in DB, with optional type filter
+      
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getMedias request" % thread_id)
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -121,7 +74,64 @@ class DataLoader(DataLoaderServicer):
             cursor.close()
 
 
+    def getMediaById(self, request: rpc_objects.IdRequest, context) -> rpc_objects.MediaResponse:
+    # Get a single media with the given ID
+     
+        thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
+        print("[%s] Received getMediaById request with id=%d" % (thread_id, request.id))
+        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        try:
+            sql = "SELECT * FROM public.medias WHERE id=%d" % request.id
+            cursor.execute(sql)
+            if cursor.rowcount == 0: raise Exception("No results were fetched")
+            result = cursor.fetchall()[0]
+            return rpc_objects.MediaResponse(
+                media=rpc_objects.Media(
+                        id= result["id"],
+                        file_uri= result["file_uri"],
+                        file_type= result["file_type"],
+                        thumbnail_uri= result["thumbnail_uri"]
+                    )
+            )
+        except Exception as e:
+            print("[%s] -> %s" % (thread_id, repr(e)))
+            return rpc_objects.MediaResponse(error_message=repr(e))
+        
+        finally:    # Runs before the return of each section
+            cursor.close()  
+
+    def getMediaByURI(self, request: rpc_objects.GetMediaByURIRequest, context) -> rpc_objects.MediaResponse:
+    # Get a single media with the given URI
+      
+        thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
+        print("[%s] Received getMediaIdFromURI request with URI=%s" % (thread_id, request.file_uri))
+        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        try:
+            sql = "SELECT * FROM public.medias WHERE file_uri=%s"
+            data = (request.file_uri,)  # The comma is to make it a tuple with one element
+            cursor.execute(sql, data)
+            if cursor.rowcount == 0: raise Exception("No results were fetched")
+            result = cursor.fetchall()[0]
+            return rpc_objects.MediaResponse(
+                media=rpc_objects.Media(
+                        id= result["id"],
+                        file_uri= result["file_uri"],
+                        file_type= result["file_type"],
+                        thumbnail_uri= result["thumbnail_uri"]
+                    )
+            )
+        except Exception as e:
+            print("[%s] -> %s" % (thread_id, repr(e)))
+            return rpc_objects.MediaResponse(error_message=repr(e))
+        
+        finally:    # Runs before the return of each section
+            cursor.close()  
+
+
+
     def createMedia(self, request: rpc_objects.CreateMediaRequest, context) -> rpc_objects.MediaResponse:
+    # Create a single media with given URI, type and thumbnail URI
+     
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         # print("[%s] Received createMedia request" % thread_id)
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -134,7 +144,6 @@ class DataLoader(DataLoaderServicer):
                 existing_media = cursor.fetchall()[0]
                 if existing_media['file_type'] == request.media.file_type and existing_media['thumbnail_uri'] == request.media.thumbnail_uri:
                     # print("[%s] -> No conflicts, returning existing media" % thread_id)
-                    cursor.close()
                     return rpc_objects.MediaResponse(
                         media=rpc_objects.Media(
                             id= existing_media['id'],
@@ -144,7 +153,6 @@ class DataLoader(DataLoaderServicer):
                         ))
                 else :
                     # print("[%s] -> Other fields conflict, returning error message" % thread_id)
-                    cursor.close()
                     return rpc_objects.MediaResponse(
                         error_message="Error: Media URI '%s' already exists with a different type or thumbnail_uri" % request.media.file_uri
                         )
@@ -154,7 +162,6 @@ class DataLoader(DataLoaderServicer):
             cursor.execute(sql, data)
             response = cursor.fetchall()[0]
             self.conn.commit()
-            cursor.close()
             return rpc_objects.MediaResponse(
                 media=rpc_objects.Media(
                     id=response['id'],
@@ -165,37 +172,44 @@ class DataLoader(DataLoaderServicer):
             )
         except Exception as e:
             # print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.MediaResponse(error_message=repr(e))
+        
+        finally:    # Runs before the return of each section
+            cursor.close()  
+
 
     def createMediaStream(self, request_iterator, context):
-        thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
-        print("[%s] Received createMediaStream request" % thread_id)
+    # Create multiple medias at the same time in batches, 
+    # returns confirmation/error messages when a batch is added
+
+        # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
+        # print("[%s] Received createMediaStream request" % thread_id)
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         request_counter = 0
-        sql = ""
+        sql = "INSERT INTO public.medias (file_uri, file_type, thumbnail_uri) VALUES "
         data = ()
+
         for request in request_iterator:
-            request_counter += 1
-            if request_counter % BATCH_SIZE == 1:
-                sql = "INSERT INTO public.medias (file_uri, file_type, thumbnail_uri) VALUES "
-                data = ()
             sql += "(%s, %s, %s)," 
             data += (
                 request.media.file_uri,
                 request.media.file_type,
                 request.media.thumbnail_uri,
             )
+            request_counter += 1
+
             if request_counter % BATCH_SIZE == 0:
                 sql = sql[:-1] + ";"
                 try:
                     cursor.execute(sql, data)
                     self.conn.commit()
-                    response = rpc_objects.CreateMediaStreamResponse(count=request_counter)
+                    yield rpc_objects.CreateMediaStreamResponse(count=request_counter)
                 except Exception as e:
-                    response = rpc_objects.CreateMediaStreamResponse(error_message=repr(e))
-                    print("[%s] -> Error: packet addition failed" % thread_id)
-                yield response
+                    yield rpc_objects.CreateMediaStreamResponse(error_message=repr(e))
+                    # print("[%s] -> Error: packet addition failed" % thread_id)
+                finally:
+                    sql = "INSERT INTO public.medias (file_uri, file_type, thumbnail_uri) VALUES "
+                    data = ()
 
         if request_counter % BATCH_SIZE > 0:
             sql = sql[:-1] + ";"
@@ -205,12 +219,15 @@ class DataLoader(DataLoaderServicer):
                 response = rpc_objects.CreateMediaStreamResponse(count=request_counter)
             except Exception as e:
                 response = rpc_objects.CreateMediaStreamResponse(error_message=repr(e))
-                print("[%s] -> %s" % (thread_id, repr(e)))
+                # print("[%s] -> %s" % (thread_id, repr(e)))
             yield response
+
         cursor.close()
 
 
     def deleteMedia(self, request: rpc_objects.IdRequest, context) -> rpc_objects.StatusResponse:
+    # Delete a single media with the given ID
+
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received deleteMedia request with id=%d" % (thread_id, request.id))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -222,9 +239,11 @@ class DataLoader(DataLoaderServicer):
                 self.conn.commit()
             else:
                 raise Exception("Element not found")
+            
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
             response = rpc_objects.StatusResponse(error_message=repr(e))
+
         finally:
             cursor.close()
             return response
@@ -232,6 +251,8 @@ class DataLoader(DataLoaderServicer):
 
     #!================ TagSets ============================================================================
     def getTagSets(self, request: rpc_objects.GetTagSetsRequest, context):
+    # Get all the tagsets stored in DB, with optional tagtype filter
+
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getTagSets request" % thread_id)
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -251,16 +272,19 @@ class DataLoader(DataLoaderServicer):
                         id= row['id'],
                         name= row['name'],
                         tagTypeId= row['tagtype_id']
-                    )
-                )
+                    ))
+
         except Exception as e:
             yield rpc_objects.TagSetResponse(error_message=repr(e))
             print("[%s] -> %s" % (thread_id, repr(e)))
+
         finally:
             cursor.close()
 
 
     def getTagSetById(self, request: rpc_objects.IdRequest, context) -> rpc_objects.TagSetResponse:
+    # Get a single tagset with the given ID
+
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getTagsetById request with id=%d" % (thread_id, request.id))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -269,21 +293,24 @@ class DataLoader(DataLoaderServicer):
             cursor.execute(sql)
             if cursor.rowcount == 0 : raise Exception("No results were fetched")
             result = cursor.fetchall()[0]
-            cursor.close()
             return rpc_objects.TagSetResponse(
                 tagset=rpc_objects.TagSet(
                     id= result['id'],
                     name= result['name'],
                     tagTypeId= result['tagtype_id']
-                )
-            )
+                ))
+        
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.TagSetResponse(error_message=repr(e))
+        
+        finally:    # Runs before the return of each section
+            cursor.close()  
         
 
     def getTagSetByName(self, request: rpc_objects.GetTagSetRequestByName, context) -> rpc_objects.TagSetResponse:
+    # Get a single tagset with the given name
+
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getTagSetByName request with name=%s" % (thread_id, request.name))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -293,33 +320,39 @@ class DataLoader(DataLoaderServicer):
             cursor.execute(sql, data)
             if cursor.rowcount == 0 : raise Exception("No results were fetched")          
             result = cursor.fetchall()[0]
-            cursor.close()
             return rpc_objects.TagSetResponse(
                 tagset=rpc_objects.TagSet(
                     id= result['id'],
                     name= result['name'],
                     tagTypeId= result['tagtype_id']
-                )
-            )
+                ))
+        
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.TagSetResponse(error_message=repr(e))
+        
+        finally:    # Runs before the return of each section
+            cursor.close()  
 
     
-    # Behaviour: if a tagset with the same name and type exists, return the existent tagset.
-    # If the name exists but with a different type, raise an error
     def createTagSet(self, request: rpc_objects.CreateTagSetRequest, context) -> rpc_objects.TagSetResponse:
+    # Create of get Tagset: if a tagset with the same name and type exists, return the existent tagset.
+    # If the name exists but with a different type, raise an error
+    # Otherwise, create the new Tagset
+    
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received createTagSet request with name=%s and tag_type=%d" % (thread_id, request.name, request.tagTypeId))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
+            # Check if the name already exists
             sql = "SELECT * FROM public.tagsets WHERE name = %s;"
             data = (request.name,)
             cursor.execute(sql, data)
             if cursor.rowcount > 0 :
                 print("[%s] -> Tagset name '%s' already exists in database" % (thread_id, request.name))
                 existing_tagset = cursor.fetchall()[0]
+
+                # Check if the type matches
                 if existing_tagset['tagtype_id'] == request.tagTypeId:
                     print("[%s] -> No type conflict, returning existing tagset" % thread_id)
                     return rpc_objects.TagSetResponse(
@@ -333,13 +366,13 @@ class DataLoader(DataLoaderServicer):
                     return rpc_objects.TagSetResponse(
                         error_message="Error: Tagset name '%s' already exists with a different type" % request.name
                         )
-
+                
+            # If name inexistent, create the new tagset
             sql = "INSERT INTO public.tagsets (name, tagtype_id) VALUES (%s, %s) RETURNING *;"
             data = (request.name, request.tagTypeId)
             cursor.execute(sql, data)
             inserted_tagset = cursor.fetchall()[0] 
             self.conn.commit()
-            cursor.close()
             return rpc_objects.TagSetResponse(
                 tagset=rpc_objects.TagSet(
                     id= inserted_tagset['id'],
@@ -350,12 +383,16 @@ class DataLoader(DataLoaderServicer):
         
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.TagSetResponse(error_message=repr(e))
+        
+        finally:    # Runs before the return of each section
+            cursor.close()  
         
 
     #!================ Tags ===============================================================================
     def getTags(self, request: rpc_objects.GetTagsRequest, context):
+    # Get all the tags stored in DB, with optional tagtype and tagset filters
+      
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getTags request" % thread_id)
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -383,6 +420,7 @@ LEFT JOIN
 LEFT JOIN
     public.numerical_tags nt ON t.id = nt.id
             """
+            # Optional filters
             if request.tagSetId > 0 or request.tagTypeId > 0:
                 sql += " WHERE "
                 if request.tagSetId > 0 and request.tagTypeId > 0:
@@ -447,6 +485,8 @@ LEFT JOIN
 
 
     def getTag(self, request: rpc_objects.IdRequest, context) -> rpc_objects.TagResponse:
+    # Get a single tag with the given ID
+        
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         # print("[%s] Received getTag request with id=%d" % (thread_id, request.id))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -513,22 +553,26 @@ LEFT JOIN
                     )
                 case _:
                     tag = {}
-            # print("[%s] -> Fetched 1 tag from database" % thread_id)
-            cursor.close()
             return rpc_objects.TagResponse(tag=tag)
+            # print("[%s] -> Fetched 1 tag from database" % thread_id)
         except Exception as e:
             # print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.TagResponse(error_message=repr(e))
+
+        finally:    # Runs before the return of each section
+            cursor.close()  
 
 
     def createTag(self, request: rpc_objects.CreateTagRequest, context) -> rpc_objects.TagResponse:
+    # Create or get tag if already existent.
+
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         # print("[%s] Received createTag request with tagset_id=%d and tagtype_id=%d" % (thread_id, request.tagSetId, request.tagTypeId))
         tagset_id = request.tagSetId
         tagtype_id = request.tagTypeId
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
+            # Check existence of the tag
             sql = """SELECT t.id, t.tagtype_id, t.tagset_id, a.name as value FROM 
 (SELECT * FROM public.tags WHERE tagset_id = %d AND tagtype_id = %d) t
 LEFT JOIN """ % (tagset_id, tagtype_id)
@@ -553,13 +597,12 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     raise Exception("invalid tag type: range is 1-5")
             cursor.execute(sql, data)
 
-            # Check if cursor has result, i.e. the tag already exists
+            # If cursor has result, i.e. the tag already exists, return it
             if cursor.rowcount > 0:
                 # print("[%s] -> Tag already present in DB, returning tag info" % thread_id)
                 result = cursor.fetchall()[0]
                 match request.tagTypeId:
                     case 1:
-                        cursor.close()
                         return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -568,7 +611,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                                 alphanumerical= rpc_objects.AlphanumericalValue(value=result['value'])
                             ))
                     case 2:
-                        cursor.close()
                         return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -577,7 +619,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                                 timestamp= rpc_objects.TimeStampValue(value=str(result['value']))
                             ))
                     case 3:
-                        cursor.close()
                         return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -586,7 +627,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                                 time = rpc_objects.TimeValue(value=str(result['value']))
                             ))
                     case 4:
-                        cursor.close()
                         return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -595,7 +635,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                                 date = rpc_objects.DateValue(value=str(result['value']))
                             ))
                     case 5:
-                        cursor.close()
                         return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -603,12 +642,8 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                                 tagTypeId=result['tagtype_id'],
                                 numerical= rpc_objects.NumericalValue(value=result['value'])
                             ))
-            
-            sql = "SELECT * FROM public.tagsets WHERE tagtype_id = %d AND id = %d;" % (tagtype_id, tagset_id)
-            cursor.execute(sql)
-            if cursor.rowcount == 0:
-                raise Exception("Error: incorrect type for the specified Tagset")
-            
+
+
             # print("[%s] -> Tag valid and non-existent, creating tag.." % thread_id)
             sql = "INSERT INTO public.tags (tagtype_id, tagset_id) VALUES (%d, %d) RETURNING id" % (tagtype_id, tagset_id)
             cursor.execute(sql)
@@ -620,7 +655,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     data = (tag_id, request.alphanumerical.value, tagset_id)
                     cursor.execute(sql, data)
                     result = cursor.fetchall()[0]
-                    cursor.close()
                     return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -633,7 +667,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     data = (tag_id, request.timestamp.value, tagset_id)
                     cursor.execute(sql, data)
                     result = cursor.fetchall()[0]
-                    cursor.close()
                     return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -646,7 +679,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     data = (tag_id, request.time.value, tagset_id)
                     cursor.execute(sql, data)
                     result = cursor.fetchall()[0]
-                    cursor.close()
                     return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -659,7 +691,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     data = (tag_id, request.date.value, tagset_id)
                     cursor.execute(sql, data)
                     result = cursor.fetchall()[0]
-                    cursor.close()
                     return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -672,7 +703,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     data = (tag_id, request.numerical.value, tagset_id)
                     cursor.execute(sql, data)
                     result = cursor.fetchall()[0]
-                    cursor.close()
                     return rpc_objects.TagResponse(
                             tag = rpc_objects.Tag(
                                 id=result['id'],
@@ -685,11 +715,16 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
 
         except Exception as e:
             # print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.TagResponse(error_message=repr(e))
+        
+        finally:    # Runs before the return of each section
+            cursor.close()  
 
 
     def createTagStream(self, request_iterator, context) -> rpc_objects.CreateTagStreamResponse:
+    # Create multiple tags using batches of INSERT commands
+    # Returns a map of the given IDs to the created IDs (used for JSON imports)
+
         id_to_realid_map = {}
         tag_counter = 0
         tag_sql = "INSERT INTO public.tags (tagtype_id, tagset_id) VALUES "
@@ -719,6 +754,8 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             )
             tag_counter += 1
 
+            # When we reach the max batch size, we execute the query and proceed to add to the 
+            # different sub-tables of tags.
             if tag_counter == BATCH_SIZE :
                 tag_sql = tag_sql[:-1] + " RETURNING *;"
                 try:
@@ -749,6 +786,7 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
 
                     cursor.execute(sql, data)
                 except Exception as e:
+                    cursor.close()
                     return rpc_objects.CreateTagStreamResponse(
                     error_message="Error adding batch of tags: %s" % repr(e)
                     )     
@@ -759,9 +797,7 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     tag_values = {}
                     rownum_to_tagid_map = {}
 
-        # print(f"Req. no->Input ID: {rownum_to_tagid_map}")
-        # print(f"Input ID->Real ID: {id_to_realid_map}")
-        # print(tag_values)
+        # Add the remaining tags
         if tag_counter > 0:
             tag_sql = tag_sql[:-1] + " RETURNING *;"
             try:
@@ -794,7 +830,10 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             except Exception as e:
                 return rpc_objects.CreateTagStreamResponse(
                     error_message="Error adding batch of tags: %s" % repr(e)
-                )    
+                )
+            
+            finally:    # Runs before the return of each section
+                cursor.close()      
     
         return rpc_objects.CreateTagStreamResponse(
             id_map=id_to_realid_map
@@ -803,6 +842,8 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
 
     #!================ Taggings (ObjectTagRelations) ======================================================
     def getTaggings(self, request: rpc_objects.EmptyRequest, context):
+    # Get all the taggings stored in DB
+
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getTaggings request" % thread_id)
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -816,16 +857,19 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     tagging=rpc_objects.Tagging(
                         mediaId=row['object_id'],
                         tagId=row['tag_id']
-                    )
-                )
+                    ))
+                
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
             yield rpc_objects.TaggingResponse(error_message=repr(e))
+
         finally:
             cursor.close()
 
 
     def getMediasWithTag(self, request: rpc_objects.IdRequest, context) -> rpc_objects.RepeatedIdResponse :
+    # Get IDs of all medias with a given tag (only providing the ID)
+        
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getMediasWithTag request with tag_id=%d" % (thread_id, request.id))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -835,16 +879,19 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             cursor.execute(sql)
             if cursor.rowcount == 0: raise Exception("No results were fetched")
             else: result = [item for item, in cursor]
-            cursor.close()
             return rpc_objects.RepeatedIdResponse(ids=result)
 
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.RepeatedIdResponse(error_message=repr(e))
-    
+
+        finally:    # Runs before the return of each section
+            cursor.close()  
+
 
     def getMediaTags(self, request: rpc_objects.IdRequest, context) -> rpc_objects.RepeatedIdResponse :
+    # Get IDs of all tags of a given media (only providing the ID)
+    
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         # print("[%s] Received getMediaTags request with media_id=%d" % (thread_id, request.id))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -854,20 +901,24 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             cursor.execute(sql)
             if cursor.rowcount == 0: raise Exception("No results were fetched")
             result = [item for item, in cursor]
-            cursor.close()
             return rpc_objects.RepeatedIdResponse(ids=result)
 
         except Exception as e:
             # print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.RepeatedIdResponse(error_message=repr(e))
+
+        finally:    # Runs before the return of each section
+            cursor.close()  
 
 
     def createTagging(self, request: rpc_objects.CreateTaggingRequest, context) -> rpc_objects.TaggingResponse:
+    # Create a tagging, i.e. associate a given tag to a given media. Return the existing tagging if already present in DB
+    
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         # print("[%s] Received createTagging request with media_id=%d and tag_id=%d" % (thread_id, request.mediaId, request.tagId))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
+            # Check for existence
             sql = ("SELECT * FROM public.taggings WHERE object_id = %d AND tag_id = %d"
                    % (request.mediaId, request.tagId))
             cursor.execute(sql)
@@ -880,35 +931,34 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                 # print("[%s] -> Tagging already present in database, returning value to client" % thread_id)
 
             tagging = cursor.fetchall()[0]
-            cursor.close()
             return rpc_objects.TaggingResponse(
                 tagging = rpc_objects.Tagging(
                     mediaId=tagging['object_id'],
                     tagId=tagging['tag_id']
-                )
-            )
+                ))
             
         except Exception as e:
             # print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.TaggingResponse(error_message=repr(e))
-    
+        
+            cursor.close()  
+
     
     def createTaggingStream(self, request_iterator, context):
+    # Create multiple taggings in a row, using batches of INSERT queries
+    # Returns the amount added at each batch addition (similiar behaviour as in createMediaStream)
+
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         request_counter = 0
-        sql = ""
+        sql = "INSERT INTO public.taggings (object_id, tag_id) VALUES "
         data = ()
+
         for request in request_iterator:
+
             request_counter += 1
-            if request_counter % BATCH_SIZE == 1:
-                sql = "INSERT INTO public.taggings (object_id, tag_id) VALUES "
-                data = ()
             sql += "(%s, %s)," 
-            data += (
-                request.mediaId,
-                request.tagId,
-            )
+            data += (request.mediaId, request.tagId,)
+
             if request_counter % BATCH_SIZE == 0:
                 sql = sql[:-1] + ";"
                 try:
@@ -918,6 +968,9 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                 except Exception as e:
                     response = rpc_objects.CreateTaggingStreamResponse(error_message=repr(e))
                 yield response
+
+                sql = "INSERT INTO public.taggings (object_id, tag_id) VALUES "
+                data = ()
 
         if request_counter % BATCH_SIZE > 0:
             sql = sql[:-1] + ";"
@@ -934,6 +987,8 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
     #!================ Hierarchies  =======================================================================
 
     def getHierarchies(self, request: rpc_objects.GetHierarchiesRequest, context) : 
+    # Get all the hierarchies stored in DB, with optional tagset filter
+        
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getHierarchies request" % thread_id)
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -951,16 +1006,19 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                         name=row['name'],
                         tagSetId=row['tagset_id'],
                         rootNodeId=row['rootnode_id']
-                    )
-                )
+                    ))
+                
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
             yield rpc_objects.HierarchyResponse(error_message=repr(e))
+
         finally:
             cursor.close()
 
 
     def getHierarchy(self, request: rpc_objects.IdRequest, context) -> rpc_objects.HierarchyResponse:
+    # Get a single hierarchy with the given ID
+
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getHierarchy request with id=%d" % (thread_id, request.id))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -969,26 +1027,29 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             cursor.execute(sql)
             if cursor.rowcount == 0 : raise Exception("No results were fetched")
             result = cursor.fetchall()[0]
-            cursor.close()
             return rpc_objects.HierarchyResponse(
                 hierarchy=rpc_objects.Hierarchy(
                     id=result['id'],
                     name=result['name'],
                     tagSetId=result['tagset_id'],
                     rootNodeId=result['rootnode_id']
-                )
-            )
+                ))
+        
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
-            return rpc_objects.HierarchyResponse(error_message=repr(e))    
+            return rpc_objects.HierarchyResponse(error_message=repr(e)) 
+        
+        finally:    # Runs before the return of each section
+            cursor.close()   
 
 
     def createHierarchy(self, request: rpc_objects.CreateHierarchyRequest, context) -> rpc_objects.HierarchyResponse:
+    # Create hierarchy with the given name and tagset_id, or returns it if already existent
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received createHierarchy request with name = %s" % (thread_id, request.name))
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
+            # Note: the pair (name, tagset_id) is unique
             sql = "SELECT * FROM public.hierarchies WHERE name = %s AND tagset_id = %s"
             data = (request.name, request.tagSetId)
             cursor.execute(sql, data)
@@ -999,7 +1060,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                 print("[%s] -> Hierarchy already present in database, returning value to client" % thread_id)
 
             response = cursor.fetchall()[0]
-            cursor.close()
             return rpc_objects.HierarchyResponse(
                 hierarchy=rpc_objects.Hierarchy(
                     id=response['id'],
@@ -1010,10 +1070,12 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             )
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.HierarchyResponse(error_message=repr(e))
         
-        
+        finally:    # Runs before the return of each section
+            cursor.close()  
+
+
     #!================ Nodes ==============================================================================
     def getNode(self, request: rpc_objects.IdRequest, context) -> rpc_objects.NodeResponse:
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
@@ -1024,7 +1086,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             cursor.execute(sql)
             if cursor.rowcount == 0 : raise Exception("No results were fetched")
             result = cursor.fetchall()[0]
-            cursor.close()
             return rpc_objects.NodeResponse(
                 node=rpc_objects.Node(
                     id=result['id'],
@@ -1035,9 +1096,12 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             )
         except Exception as e:
             # print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.NodeResponse(error_message=repr(e))   
-    
+        
+        finally:    # Runs before the return of each section
+            cursor.close()  
+
+
     def getNodes(self, request: rpc_objects.GetNodesRequest, context) :
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         # print("[%s] Received getNodes request" % (thread_id))
@@ -1070,14 +1134,18 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
         except Exception as e:
             # print("[%s] -> %s" % (thread_id, repr(e)))
             yield rpc_objects.NodeResponse(error_message=repr(e))
+        
         finally:
             cursor.close()
+
 
     def createNode(self, request: rpc_objects.CreateNodeRequest, context) -> rpc_objects.NodeResponse :
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         # print("[%s] Received creatNode request" % thread_id)
         cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
         if request.parentNodeId:
+        # We're not trying to add a root node
             try:
                 sql = ("SELECT * FROM public.nodes WHERE tag_id = %d AND hierarchy_id = %d AND parentnode_id = %d"
                     % (
@@ -1097,7 +1165,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     # print("[%s] -> Node already present in database, returning value to client" % thread_id)
                     pass
                 response = cursor.fetchall()[0]
-                cursor.close()
                 return rpc_objects.NodeResponse(
                     node=rpc_objects.Node(
                         id=response['id'],
@@ -1108,10 +1175,13 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                 )
             except Exception as e:
                 # print("[%s] -> %s" % (thread_id, repr(e)))
-                cursor.close()
                 return rpc_objects.NodeResponse(error_message=repr(e))
+            
+            finally:
+                cursor.close()
         
-        else: # add a root node to hierarchy, only if it doesn't have any
+        else: 
+        # We are trying to add a root node to hierarchy. Can be done only if it doesn't have any
             try:
                 sql = ("SELECT * FROM public.nodes WHERE tag_id = %d AND hierarchy_id = %d AND parentnode_id IS NULL"
                     % (
@@ -1134,7 +1204,6 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                 else:
                     # print("[%s] -> Node already present in database, returning value to client" % thread_id)
                     node = cursor.fetchall()[0]
-                cursor.close()
                 return rpc_objects.NodeResponse(
                         node=rpc_objects.Node(
                             id=node['id'],
@@ -1145,9 +1214,10 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
 
             except Exception as e:
                 # print("[%s] -> %s" % (thread_id, repr(e)))
-                cursor.close()
                 return rpc_objects.NodeResponse(error_message=repr(e))
             
+            finally:
+                cursor.close()
 
     def deleteNode(self, request: rpc_objects.IdRequest, context) -> rpc_objects.StatusResponse:
         # The current behaviour enforced by the DB rules is that you cannot delete a node with childs,
@@ -1160,14 +1230,14 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             cursor.execute(sql)
             if cursor.rowcount > 0:
                 self.conn.commit()
-                cursor.close()
                 return rpc_objects.StatusResponse()
             else:
                 raise Exception("Element not found")
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.StatusResponse(error_message=repr(e))
+        finally:
+            cursor.close()
         
 
     #!================ DB Management ======================================================================
@@ -1179,12 +1249,12 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
         try:
             cursor.execute(open("../ddl.sql", "r").read())
             print("[%s] -> SUCCESS: DB has been reset" % thread_id)
-            cursor.close()
             return rpc_objects.StatusResponse()
         except Exception as e:
             print("[%s] -> %s" % (thread_id, repr(e)))
-            cursor.close()
             return rpc_objects.StatusResponse(error_message=repr(e))
+        finally:
+            cursor.close()
 
 
 def serve() -> None:
