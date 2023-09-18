@@ -2,7 +2,6 @@ from concurrent import futures
 import logging
 import psycopg2
 import psycopg2.extras
-import sys
 import random
 
 from words import WORDS
