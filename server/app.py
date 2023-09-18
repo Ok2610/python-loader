@@ -31,7 +31,7 @@ class DataLoader(DataLoaderServicer):
         data = cursor.fetchone()
         print("Connection established to: ", data)
         
-        # ! Uncomment to update the old schema with the new namings, triggers and tag_type in the tagsets table
+        # ! Uncomment to update an old schema with the new namings, triggers and tag_type in the tagsets table
         # try:
         #     cursor.execute(open("update_db_tables.sql", "r").read())
         #     print("DB has been updated")
