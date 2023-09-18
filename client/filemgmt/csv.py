@@ -1,10 +1,11 @@
-import json
 import csv
 import grpc_client
 from filemgmt.filehandler import FileHandler
 
 class CSVHandler(FileHandler):
-# Outdated
+# OUTDATED
+# Class used to parse CSV files but the syntax hasn't been updated for the optimized functions
+
     def importFile(self, path):
         try:
             with open(path, 'r') as file:

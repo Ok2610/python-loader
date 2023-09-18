@@ -558,7 +558,8 @@ LEFT JOIN
 
 
     def createTag(self, request: rpc_objects.CreateTagRequest, context) -> rpc_objects.TagResponse:
-    # Create or get tag if already existent.
+    # Create or get tag if already existent. This function is lengthy as it needs to send and receive different RPC objects
+    # depending on the type of the Tag.
 
         # thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         # print("[%s] Received createTag request with tagset_id=%d and tagtype_id=%d" % (thread_id, request.tagSetId, request.tagTypeId))
@@ -839,7 +840,7 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
 
     #!================ Taggings (ObjectTagRelations) ======================================================
     def getTaggings(self, request: rpc_objects.EmptyRequest, context):
-    # Get all the taggings stored in DB
+    # Get all the taggings stored in DB.
 
         thread_id = "%s-%d" % (random.choice(WORDS), random.randint(1000,9999))
         print("[%s] Received getTaggings request" % thread_id)

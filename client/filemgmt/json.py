@@ -1,20 +1,22 @@
 import json
-import csv
-import grpc_client
 from filemgmt.filehandler import FileHandler
 
 class JSONHandler(FileHandler):
 # Works with the human-friendly JSON files, less efficient but that can be used for manual tagging of a small collection
-    def addNode(self, node, tagset_id, tagtype_id, hierarchy_id, parentnode_id):
-        tag_value = node.get('tag_value')
-        if tag_value:
-            tag = self.client.add_tag(tagset_id, tagtype_id, tag_value)
-            new_node = self.client.add_node(tag.id, hierarchy_id, parentnode_id)    # type: ignore
-            child_nodes = node.get('child_nodes')
-            for child_node_item in child_nodes:
-                self.addNode(child_node_item, tagset_id, tagtype_id, hierarchy_id, new_node.id)
+# It may be irrelevant because the 'fast' format is in fact readable enough and way more efficient.
+# NOTE: the 'human-readable' format is used in the JSON files in the 'tests' folder. The main difference is the use of tag names instead of IDs.
 
     def importFile(self, path):
+    # Import medias, tags and/or hierarchies from a JSON file using the 'human-readable' format
+        def addNode(node, tagset_id, tagtype_id, hierarchy_id, parentnode_id):
+            tag_value = node.get('tag_value')
+            if tag_value:
+                tag = self.client.add_tag(tagset_id, tagtype_id, tag_value)
+                new_node = self.client.add_node(tag.id, hierarchy_id, parentnode_id)    # type: ignore
+                child_nodes = node.get('child_nodes')
+                for child_node_item in child_nodes:
+                    addNode(child_node_item, tagset_id, tagtype_id, hierarchy_id, new_node.id)
+
         try:
             with open(path, 'r') as file:
                 data = json.load(file)
@@ -61,7 +63,7 @@ class JSONHandler(FileHandler):
                             rootnode_id = self.client.add_rootnode(rootnode_tag.id, hierarchy_response.id).id   # type: ignore
                             child_nodes = rootnode_item.get('child_nodes')
                             for child_node_item in child_nodes:                    
-                                self.addNode(child_node_item, tagset_id, tagtype_id, hierarchy_response.id, rootnode_id)
+                                addNode(child_node_item, tagset_id, tagtype_id, hierarchy_response.id, rootnode_id)
 
                     else:
                         print(f"Invalid item in medias: {hierarchy}")
@@ -75,27 +77,29 @@ class JSONHandler(FileHandler):
 
 
 
-    def fillTree(self, node):
-        tag_response = self.client.get_tag(node.tagId)
-        possible_values = [tag_response.alphanumerical.value,           # type: ignore
-                                    tag_response.timestamp.value,                # type: ignore
-                                    tag_response.time.value,                     # type: ignore
-                                    tag_response.date.value,                     # type: ignore
-                                    tag_response.numerical.value]                # type: ignore
-        value = next(value for value in possible_values if value != "")
-        child_nodes_response = self.client.get_nodes(parentnode_id=node.id)
-        child_nodes = []
-        for child_node in child_nodes_response:
-            if type(child_node) is not str:                         # cheap way to check that we did not get an error
-                child_nodes.append(self.fillTree(child_node))
-        return {"tag_value": value, "child_nodes":child_nodes}
 
 
     def exportFile(self, path):
+    # Export the current DB state to a JSON file using the 'human-friendly' format
         tagsets = []
         medias = []
         hierarchies = []
 
+        def fillTree(node):
+            tag_response = self.client.get_tag(node.tagId)
+            possible_values = [tag_response.alphanumerical.value,           # type: ignore
+                                        tag_response.timestamp.value,                # type: ignore
+                                        tag_response.time.value,                     # type: ignore
+                                        tag_response.date.value,                     # type: ignore
+                                        tag_response.numerical.value]                # type: ignore
+            value = next(value for value in possible_values if value != "")
+            child_nodes_response = self.client.get_nodes(parentnode_id=node.id)
+            child_nodes = []
+            for child_node in child_nodes_response:
+                if type(child_node) is not str:                 # cheap way to check that we did not get an error
+                    child_nodes.append(fillTree(child_node))
+            return {"tag_value": value, "child_nodes":child_nodes}
+        
         response_tagsets = self.client.get_tagsets(-1)
         for tagset_response in response_tagsets:
             if type(tagset_response) is not str:
@@ -133,7 +137,7 @@ class JSONHandler(FileHandler):
                 hierarchy_name = hierarchy_response.name
                 hierarchy_tagset_id = hierarchy_response.tagSetId
                 rootnode = self.client.get_node(hierarchy_response.rootNodeId)
-                filled_tree = self.fillTree(rootnode)
+                filled_tree = fillTree(rootnode)
                 hierarchies.append({
                     "name":hierarchy_name,
                     "tagset_id":hierarchy_tagset_id,

@@ -5,11 +5,19 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import time
-import heapq
 
 class FastJSONHandler(FileHandler):
-# Works with optimized JSON files, allowing faster execution times for importing and exporting
+# Works with optimized JSON files, allowing for faster execution times on importing and exporting
+# at the cost of human readability
+# NOTE: I used the library tqdm for visualising progress and measuring execution times, but it mixed the execution times of
+# the different sections. All the 'tqdm.write' statements are basically prints made to work with tqdm progress bars
+
     def importFile(self, path):
+    # Import a JSON file's contents using the 'fast' format. It is structured in 3 parts: 
+    # - Tagsets and their respective tags, with value and ID
+    # - Medias and their respective list of tag IDs
+    # - Hierarchies with nodes containing tag IDs in a tree structure
+
         try:
             with open(path, 'r') as file:
                 data = json.load(file)
@@ -19,12 +27,16 @@ class FastJSONHandler(FileHandler):
                 printlock = threading.Lock()
                 with ThreadPoolExecutor(max_workers=10) as threadpool:
 
-                    #! TAGSETS and TAGS
+                    # Processing of tagsets and tags
                     start = time.time()
+
+                    # We order the tagsets according to their sizes, to begin processing the larger ones first
                     tagsets = sorted(data.get('tagsets', []), key= lambda tagset_item: -len(tagset_item.get('tags', [])))
+                    
                     tagsets_pbar = tqdm(total=len(tagsets), desc="1- Adding tagsets", position=0)
 
                     def processTagset(tagset_item):
+                    # Processing of a single tagset by a given thread. We first get the tagset's attributes, then the list of its tags
                         thread_client = grpc_client.LoaderClient()
                         tagset_id = tagset_item.get('id')
                         tagset_name = tagset_item.get('name')
@@ -47,17 +59,6 @@ class FastJSONHandler(FileHandler):
                                 tagid_map_frag.update(tags_response)
 
                         return tagid_map_frag
-                        # for tag_item in tags:
-                        #     value = tag_item.get('value') 
-                        #     tag_response = thread_client.add_tag(tagset_response.id, tagset_type, value)
-                        #     if type(tag_response) is str:
-                        #         printlock.acquire()
-                        #         tqdm.write(f"Invalid item in tagset {tagset_name} : {tag_response}")
-                        #         printlock.release()
-                        #         continue
-                        #     tag_id_map_lock.acquire()
-                        #     tag_id_map[tag_item.get('id')] = tag_response.id    #type: ignore
-                        #     tag_id_map_lock.release()
                                     
                     futures = [threadpool.submit(processTagset, tagset_item) for tagset_item in tagsets]
                     
@@ -71,11 +72,14 @@ class FastJSONHandler(FileHandler):
                     elapsed = time.time() - start
                     tqdm.write(f"Time for processing {len(tagsets)} tagsets: {elapsed}s.")
 
+
+                    # Processing of medias
                     start = time.time()
                     medias = sorted(data.get('medias', []), key= lambda media_item: -len(media_item.get('tags')))
                     medias_pbar = tqdm(total=len(medias), desc="2- Adding medias", position=1)
 
                     def processMedia(media_item):
+                    # Processing of a single media by a single thread
                         thread_client = grpc_client.LoaderClient()
                         media_path = media_item.get('path')
                         media_response = thread_client.add_file(media_path)
@@ -86,17 +90,12 @@ class FastJSONHandler(FileHandler):
                             if item in tag_id_map.keys():
                                 tags.append(tag_id_map[item])
 
-                        # tags2 = [tag_id_map[item] for item in media_item.get('tags', [])]
                         response_iterator = thread_client.add_taggings(media_id=media_response.id, tag_ids=tags)
+                        # We need to iterate here because otherwise the thread will terminate without waiting for the responses
                         for _ in response_iterator:
                             continue
                         return None
-                        # for response in thread_client.add_taggings(media_id=media_response.id, tag_ids=tags):
-                        #     if type(response) is str:
-                        #         printlock.acquire()
-                        #         print(f"Couldn't add tagging : {response}")
-                        #         printlock.release()
-
+                    
                     futures = [threadpool.submit(processMedia, media_item) for media_item in medias]
                     for future in as_completed(futures):
                         result = future.result() 
@@ -106,13 +105,14 @@ class FastJSONHandler(FileHandler):
                     elapsed = time.time() - start
                     tqdm.write(f"Time for processing {len(medias)} medias: {elapsed}s.")
 
-
+                    # Processing hierarchies
                     start = time.time()
                     hierarchies = sorted(data.get('hierarchies', []), 
                                          key= lambda item : -len(json.dumps(item))) 
                     hierarchies_pbar = tqdm(total=len(hierarchies), desc="3- Adding hierarchies", position=2)
                 
                     def processHierarchy(hierarchy_item):
+                    # Processing of a single hierarchy by a single thread
                         try:
                             thread_client = grpc_client.LoaderClient()
                             name = hierarchy_item.get('name')
@@ -159,6 +159,7 @@ class FastJSONHandler(FileHandler):
     
 
     def exportFile(self, path):
+    # Export the current DB state to a JSON file using the 'fast' format
         start_time = time.time()
         tagsets = []
         tagsets_lock = threading.Lock()
