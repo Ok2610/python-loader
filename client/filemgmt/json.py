@@ -4,7 +4,7 @@ import grpc_client
 from filemgmt.filehandler import FileHandler
 
 class JSONHandler(FileHandler):
-
+# Works with the human-friendly JSON files, less efficient but that can be used for manual tagging of a small collection
     def addNode(self, node, tagset_id, tagtype_id, hierarchy_id, parentnode_id):
         tag_value = node.get('tag_value')
         if tag_value:
@@ -13,7 +13,6 @@ class JSONHandler(FileHandler):
             child_nodes = node.get('child_nodes')
             for child_node_item in child_nodes:
                 self.addNode(child_node_item, tagset_id, tagtype_id, hierarchy_id, new_node.id)
-
 
     def importFile(self, path):
         try:

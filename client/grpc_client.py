@@ -232,9 +232,10 @@ class LoaderClient:
                     case _:
                         return "Error: wrong type %d" % tagtype_id
                     
-        response = self.grpc_stub.createTagStream(tags_iterator())
-        return response.error_message if response.error_message \
-        else response.id_map
+        response_iterator = self.grpc_stub.createTagStream(tags_iterator())
+        for response in response_iterator:
+            yield response.error_message if response.error_message \
+            else response.id_map
     
     def get_tag(self, tag_id: int):
         request = rpc_objects.IdRequest(id=tag_id)

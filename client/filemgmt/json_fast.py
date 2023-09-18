@@ -8,7 +8,7 @@ import time
 import heapq
 
 class FastJSONHandler(FileHandler):
-    
+# Works with optimized JSON files, allowing faster execution times for importing and exporting
     def importFile(self, path):
         try:
             with open(path, 'r') as file:
@@ -38,10 +38,15 @@ class FastJSONHandler(FileHandler):
                         tagset_id_map_lock.release()
                         
                         tags = tagset_item.get('tags')
-                        tags_response = thread_client.add_tags(tagset_response.id, tagset_type, tags)
-                        if type(tags_response) is str:
-                            return f"Error adding tags of tagset {tagset_name}: {tags_response}"
-                        return tags_response
+                        tagid_map_frag = {}
+                        tags_response_iterator = thread_client.add_tags(tagset_response.id, tagset_type, tags)
+                        for tags_response in tags_response_iterator:
+                            if type(tags_response) is str:
+                                return f"Error adding tags of tagset {tagset_name}: {tags_response}"
+                            else:
+                                tagid_map_frag.update(tags_response)
+
+                        return tagid_map_frag
                         # for tag_item in tags:
                         #     value = tag_item.get('value') 
                         #     tag_response = thread_client.add_tag(tagset_response.id, tagset_type, value)
@@ -76,7 +81,12 @@ class FastJSONHandler(FileHandler):
                         media_response = thread_client.add_file(media_path)
                         if type(media_response) is str:
                             return f"Couldn't add media {media_item}: {media_response}"
-                        tags = [tag_id_map[item] for item in media_item.get('tags', [])]
+                        tags = []
+                        for item in media_item.get('tags', []):
+                            if item in tag_id_map.keys():
+                                tags.append(tag_id_map[item])
+
+                        # tags2 = [tag_id_map[item] for item in media_item.get('tags', [])]
                         response_iterator = thread_client.add_taggings(media_id=media_response.id, tag_ids=tags)
                         for _ in response_iterator:
                             continue
@@ -103,38 +113,41 @@ class FastJSONHandler(FileHandler):
                     hierarchies_pbar = tqdm(total=len(hierarchies), desc="3- Adding hierarchies", position=2)
                 
                     def processHierarchy(hierarchy_item):
-                        thread_client = grpc_client.LoaderClient()
-                        name = hierarchy_item.get('name')
-                        tagset_id = tagset_id_map[hierarchy_item.get('tagset_id')][0]
-                        hierarchy_response = thread_client.add_hierarchy(name, tagset_id)
-                        if type(hierarchy_response) is str:
+                        try:
+                            thread_client = grpc_client.LoaderClient()
+                            name = hierarchy_item.get('name')
+                            tagset_id = tagset_id_map[hierarchy_item.get('tagset_id')][0]
+                            hierarchy_response = thread_client.add_hierarchy(name, tagset_id)
+                            if type(hierarchy_response) is str:
+                                raise Exception(f"Couldn't add hierarchy {name}: {hierarchy_response}")
+                            hierarchy_id = hierarchy_response.id
+
+                            def addNode(node, parentnode_id):
+                                tag_id = tag_id_map[node.get('tag_id')]
+                                if tag_id:
+                                    new_node = thread_client.add_node(tag_id, hierarchy_id, parentnode_id)    # type: ignore
+                                    child_nodes = node.get('child_nodes')
+                                    for child_node_item in child_nodes:
+                                        addNode(child_node_item, new_node.id)
+
+                            
+                            rootnode_item = hierarchy_item.get('rootnode')
+                            rootnode_tag_id = tag_id_map[rootnode_item.get('tag_id')]
+                            if rootnode_tag_id:
+                                rootnode_id = thread_client.add_rootnode(rootnode_tag_id, hierarchy_response.id).id   # type: ignore
+                                child_nodes = rootnode_item.get('child_nodes')
+                                for child_node_item in child_nodes:                    
+                                    addNode(child_node_item, rootnode_id)
+                                    
+                        except Exception as e:
                             printlock.acquire()
-                            tqdm.write(f"Couldn't add hierarchy {name}: {hierarchy_response}")
+                            tqdm.write(f'Error adding hierarchy: {repr(e)}')
                             printlock.release()
-                            return
-                        hierarchy_id = hierarchy_response.id
-
-                        def addNode(node, parentnode_id):
-                            tag_id = tag_id_map[node.get('tag_id')]
-                            if tag_id:
-                                new_node = thread_client.add_node(tag_id, hierarchy_id, parentnode_id)    # type: ignore
-                                child_nodes = node.get('child_nodes')
-                                for child_node_item in child_nodes:
-                                    addNode(child_node_item, new_node.id)
-
-                        
-                        rootnode_item = hierarchy_item.get('rootnode')
-                        rootnode_tag_id = tag_id_map[rootnode_item.get('tag_id')]
-                        if rootnode_tag_id:
-                            rootnode_id = thread_client.add_rootnode(rootnode_tag_id, hierarchy_response.id).id   # type: ignore
-                            child_nodes = rootnode_item.get('child_nodes')
-                            for child_node_item in child_nodes:                    
-                                addNode(child_node_item, rootnode_id)
-                        
                     
                     futures = [threadpool.submit(processHierarchy, hierarchy_item) for hierarchy_item in hierarchies]
                     for _ in as_completed(futures):
-                        hierarchies_pbar.update(1)  
+                        hierarchies_pbar.update(1) 
+                        continue 
                     elapsed = time.time() - start
                     tqdm.write(f"Time for processing {len(hierarchies)} hierarchies: {elapsed}s.")
 
@@ -154,42 +167,42 @@ class FastJSONHandler(FileHandler):
         hierarchies = []
         hierarchies_lock = threading.Lock()
 
-        # response_tagsets = self.client.get_tagsets(-1)
-        # tagsets_pbar = tqdm(total=0, desc="Exporting tagsets")
-        # def processTagset(tagset_response):
-        #     thread_client = grpc_client.LoaderClient()
-        #     tags = []
-        #     response_tags = thread_client.get_tags(-1, tagset_response.id)
-        #     for tag_response in response_tags:
-        #         if type(tag_response) is not str:                
-        #             tag_id = tag_response.id                               
-        #             possible_values = [tag_response.alphanumerical.value,
-        #                             tag_response.timestamp.value,
-        #                             tag_response.time.value,
-        #                             tag_response.date.value,
-        #                             tag_response.numerical.value]
-        #             value = next(value for value in possible_values if value != "")
-        #             tags.append({"id":tag_id, "value":value})
-        #     tagsets_lock.acquire()
-        #     tagsets.append(
-        #         {
-        #             "id"  : tagset_response.id,
-        #             "name": tagset_response.name,
-        #             "type": tagset_response.tagTypeId,
-        #             "tags": tags
-        #         })
-        #     tagsets_lock.release()
-        #     tagsets_pbar.update(1)
+        response_tagsets = self.client.get_tagsets(-1)
+        tagsets_pbar = tqdm(total=0, desc="Exporting tagsets")
+        def processTagset(tagset_response):
+            thread_client = grpc_client.LoaderClient()
+            tags = []
+            response_tags = thread_client.get_tags(-1, tagset_response.id)
+            for tag_response in response_tags:
+                if type(tag_response) is not str:                
+                    tag_id = tag_response.id                               
+                    possible_values = [tag_response.alphanumerical.value,
+                                    tag_response.timestamp.value,
+                                    tag_response.time.value,
+                                    tag_response.date.value,
+                                    tag_response.numerical.value]
+                    value = next(value for value in possible_values if value != "")
+                    tags.append({"id":tag_id, "value":value})
+            tagsets_lock.acquire()
+            tagsets.append(
+                {
+                    "id"  : tagset_response.id,
+                    "name": tagset_response.name,
+                    "type": tagset_response.tagTypeId,
+                    "tags": tags
+                })
+            tagsets_lock.release()
+            tagsets_pbar.update(1)
 
         
-        # tagset_executor = ThreadPoolExecutor(max_workers=10)
-        # for tagset_response in response_tagsets:
-        #     if type(tagset_response) is not str:
-        #         tagsets_pbar.total += 1
-        #         tagsets_pbar.refresh()
-        #         tagset_executor.submit(processTagset, tagset_response)
+        tagset_executor = ThreadPoolExecutor(max_workers=10)
+        for tagset_response in response_tagsets:
+            if type(tagset_response) is not str:
+                tagsets_pbar.total += 1
+                tagsets_pbar.refresh()
+                tagset_executor.submit(processTagset, tagset_response)
 
-        # tagset_executor.shutdown()
+        tagset_executor.shutdown()
         
         medias_pbar = tqdm(total=0, desc="Exporting medias")
         def processMedia(media_response):
@@ -220,39 +233,39 @@ class FastJSONHandler(FileHandler):
         medias_executor.shutdown()
                 
         
-        # response_hierarchies = self.client.get_hierarchies(-1)
-        # hierarchies_pbar = tqdm(total=0, desc="Exporting hierarchies")
-        # def processHierarchy(hierarchy_response):
-        #     thread_client = grpc_client.LoaderClient()
-        #     hierarchy_name = hierarchy_response.name
-        #     hierarchy_tagset_id = hierarchy_response.tagSetId
-        #     rootnode = thread_client.get_node(hierarchy_response.rootNodeId)
-        #     def fillTree(node):
-        #         child_nodes_response = thread_client.get_nodes(parentnode_id=node.id)
-        #         child_nodes = []
-        #         for child_node in child_nodes_response:
-        #             if type(child_node) is not str:
-        #                 child_nodes.append(fillTree(child_node))
-        #         return {"tag_id": node.tagId, "child_nodes":child_nodes}
+        response_hierarchies = self.client.get_hierarchies(-1)
+        hierarchies_pbar = tqdm(total=0, desc="Exporting hierarchies")
+        def processHierarchy(hierarchy_response):
+            thread_client = grpc_client.LoaderClient()
+            hierarchy_name = hierarchy_response.name
+            hierarchy_tagset_id = hierarchy_response.tagSetId
+            rootnode = thread_client.get_node(hierarchy_response.rootNodeId)
+            def fillTree(node):
+                child_nodes_response = thread_client.get_nodes(parentnode_id=node.id)
+                child_nodes = []
+                for child_node in child_nodes_response:
+                    if type(child_node) is not str:
+                        child_nodes.append(fillTree(child_node))
+                return {"tag_id": node.tagId, "child_nodes":child_nodes}
             
-        #     filled_tree = fillTree(rootnode)
-        #     hierarchies_lock.acquire()
-        #     hierarchies.append({
-        #         "name":hierarchy_name,
-        #         "tagset_id":hierarchy_tagset_id,
-        #         "rootnode": filled_tree
-        #     })
-        #     hierarchies_lock.release()
-        #     hierarchies_pbar.update(1)
+            filled_tree = fillTree(rootnode)
+            hierarchies_lock.acquire()
+            hierarchies.append({
+                "name":hierarchy_name,
+                "tagset_id":hierarchy_tagset_id,
+                "rootnode": filled_tree
+            })
+            hierarchies_lock.release()
+            hierarchies_pbar.update(1)
 
-        # hierarchies_executor = ThreadPoolExecutor(max_workers=10)
-        # for hierarchy_response in response_hierarchies:
-        #     if type(hierarchy_response) is not str:
-        #         hierarchies_pbar.total += 1
-        #         hierarchies_pbar.refresh()
-        #         hierarchies_executor.submit(processHierarchy, hierarchy_response)
+        hierarchies_executor = ThreadPoolExecutor(max_workers=10)
+        for hierarchy_response in response_hierarchies:
+            if type(hierarchy_response) is not str:
+                hierarchies_pbar.total += 1
+                hierarchies_pbar.refresh()
+                hierarchies_executor.submit(processHierarchy, hierarchy_response)
 
-        # hierarchies_executor.shutdown()
+        hierarchies_executor.shutdown()
 
 
         data = {"tagsets": tagsets, "medias": medias, "hierarchies": hierarchies}

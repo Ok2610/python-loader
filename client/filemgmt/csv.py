@@ -4,7 +4,7 @@ import grpc_client
 from filemgmt.filehandler import FileHandler
 
 class CSVHandler(FileHandler):
-
+# Outdated
     def importFile(self, path):
         try:
             with open(path, 'r') as file:

@@ -1,3 +1,8 @@
+"""
+CLI for interacting with the data loader. It is based on the Click python library, and handles most of the input checking.
+    
+"""
+
 from __future__ import print_function
 
 import click
@@ -10,7 +15,6 @@ from filemgmt.filehandler import FileHandler
 from filemgmt.json import JSONHandler
 from filemgmt.csv import CSVHandler
 from filemgmt.json_fast import FastJSONHandler
-
 
 client = LoaderClient(grpc_host='localhost', grpc_port='50051')
 

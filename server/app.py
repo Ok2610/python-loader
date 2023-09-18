@@ -715,11 +715,10 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             cursor.close()  
 
 
-    def createTagStream(self, request_iterator, context) -> rpc_objects.CreateTagStreamResponse:
+    def createTagStream(self, request_iterator, context):
     # Create multiple tags using batches of INSERT commands
     # Returns a map of the given IDs to the created IDs (used for JSON imports)
 
-        id_to_realid_map = {}
         tag_counter = 0
         tag_sql = "INSERT INTO public.tags (tagtype_id, tagset_id) VALUES "
         tag_data = ()
@@ -752,6 +751,7 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
             # different sub-tables of tags.
             if tag_counter == BATCH_SIZE :
                 tag_sql = tag_sql[:-1] + " RETURNING *;"
+                id_to_realid_map = {}
                 try:
                     cursor.execute(tag_sql, tag_data)
                     i = 0
@@ -777,11 +777,14 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                                 sql += "INSERT INTO public.numerical_tags (id, name, tagset_id) VALUES (%s,%s,%s);\n"
                                 data += (tag_id, tag_values[i], inserted_tag['tagset_id'],)
                         i += 1
-
                     cursor.execute(sql, data)
+                    yield rpc_objects.CreateTagStreamResponse(
+                        id_map=id_to_realid_map
+                    )
+
                 except Exception as e:
                     cursor.close()
-                    return rpc_objects.CreateTagStreamResponse(
+                    yield rpc_objects.CreateTagStreamResponse(
                     error_message="Error adding batch of tags: %s" % repr(e)
                     )     
                 finally:
@@ -794,6 +797,7 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
         # Add the remaining tags
         if tag_counter > 0:
             tag_sql = tag_sql[:-1] + " RETURNING *;"
+            id_to_realid_map = {}
             try:
                 cursor.execute(tag_sql, tag_data)
                 i = 0
@@ -821,17 +825,16 @@ LEFT JOIN """ % (tagset_id, tagtype_id)
                     i += 1
 
                 cursor.execute(sql, data)
+                yield rpc_objects.CreateTagStreamResponse(
+                        id_map=id_to_realid_map
+                    )
             except Exception as e:
-                return rpc_objects.CreateTagStreamResponse(
+                yield rpc_objects.CreateTagStreamResponse(
                     error_message="Error adding batch of tags: %s" % repr(e)
                 )
             
             finally:    # Runs before the return of each section
                 cursor.close()      
-    
-        return rpc_objects.CreateTagStreamResponse(
-            id_map=id_to_realid_map
-        )
 
 
     #!================ Taggings (ObjectTagRelations) ======================================================

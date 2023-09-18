@@ -23,7 +23,7 @@ service DataLoader {
 	rpc getTags(GetTagsRequest) returns (stream TagResponse) {};  // Get all the tags stored in DB, with optional tagtype and tagset filters
 	rpc getTag(IdRequest) returns (TagResponse) {};               // Get a single tag with the given ID
 	rpc createTag(CreateTagRequest) returns (TagResponse) {};     // Create or get tag if already existent
-  rpc createTagStream(stream CreateTagStreamRequest) returns (CreateTagStreamResponse) {};
+  rpc createTagStream(stream CreateTagStreamRequest) returns (stream CreateTagStreamResponse) {};
     // Create multiple tags using batches of INSERT queries
     // Returns a map of the given IDs to the created IDs (used for JSON imports)
 

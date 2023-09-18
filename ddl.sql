@@ -236,7 +236,6 @@ VALUES
 ('time'),
 ('date'),
 ('numerical');
-COMMIT;
 
 REVOKE ALL ON public.tag_types FROM postgres;
 REVOKE ALL ON public.tag_types FROM public;
