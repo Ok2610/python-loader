@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
 	"strconv"
+	"strings"
 
 	"google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -17,6 +19,9 @@ import (
 	_ "github.com/lib/pq"
 
 	pb "m3.dataloader/dataloader"
+
+	amqp "github.com/rabbitmq/amqp091-go"
+	rmq "m3.dataloader/rabbitMQ"
 )
 
 const (
@@ -28,6 +33,10 @@ const (
 	sv_host    = "localhost"
 	sv_port    = 50051
 	BATCH_SIZE = 5000
+)
+
+var (
+	prod *rmq.Producer
 )
 
 type DataLoaderServer struct {
@@ -175,6 +184,13 @@ func (s *DataLoaderServer) CreateMedia(ctx context.Context, request *pb.CreateMe
 	if err != nil {
 		return &pb.MediaResponse{ErrorMessage: fmt.Sprintf("Failed to insert media into database: %s", err)}, nil
 	}
+
+	body := fmt.Sprintf(`{
+		"ID": "%d",
+		"MediaURI": "%s",
+		"ThumbnailURI": "%s"
+	}`, insertedMedia.Id, insertedMedia.FileUri, insertedMedia.ThumbnailUri)
+	rmq.PublishMessage(prod, body, fmt.Sprintf("media.%d", insertedMedia.FileType))
 
 	return &pb.MediaResponse{
 		Media: &insertedMedia,
@@ -920,6 +936,40 @@ func (s *DataLoaderServer) CreateTagging(ctx context.Context, request *pb.Create
 	if err != nil {
 		return &pb.TaggingResponse{ErrorMessage: fmt.Sprintf("Failed to insert tagging into database: %s", err)}, nil
 	}
+	queryString = `SELECT 
+		COALESCE(ant.name, tst.name::text, tt.name::text, dt.name::text, nt.name::text) AS value,
+		t.tagtype_id,
+		ts.name AS tagset_name
+	FROM 
+		public.tags t
+	LEFT JOIN 
+		public.alphanumerical_tags ant ON t.id = ant.id
+	LEFT JOIN 
+		public.timestamp_tags tst ON t.id = tst.id
+	LEFT JOIN 
+		public.time_tags tt ON t.id = tt.id
+	LEFT JOIN 
+		public.date_tags dt ON t.id = dt.id
+	LEFT JOIN 
+		public.numerical_tags nt ON t.id = nt.id
+	JOIN 
+		public.tagsets ts ON t.tagset_id = ts.id
+	WHERE 
+		t.id = $1;`
+
+	var tagValue string
+	var tagTypeId int64
+	var tagSetName string
+	err = s.db.QueryRow(queryString, request.TagId).Scan(&tagValue, &tagTypeId, &tagSetName)
+	if err != nil {
+		return &pb.TaggingResponse{ErrorMessage: fmt.Sprintf("Failed to fetch tag value and type from database: %s", err)}, nil
+	}
+
+	body := fmt.Sprintf(`{
+		"taggingValue": "%s",
+		"mediaID": "%d"
+	}`, tagValue, insertedTagging.MediaId)
+	rmq.PublishMessage(prod, body, fmt.Sprintf("tagging.already_added.%d.%s", tagTypeId, tagSetName))
 
 	return &pb.TaggingResponse{
 		Tagging: &insertedTagging,
@@ -1260,6 +1310,137 @@ func main() {
 		log.Fatalf("Error creating server: %v", err)
 	}
 	defer server.Close()
+
+	prod = rmq.ProducerConnexionInit()
+	defer prod.ConnexionEnd()
+
+	go func() {
+		rmq.Listen("tagging.not_added.*.*", func(msg amqp.Delivery) {
+			log.Printf("Received message: %s", msg.Body)
+
+			// Get the tag type ID and tagset from the routing key
+			routingKeyParts := strings.Split(msg.RoutingKey, ".")
+			if len(routingKeyParts) != 4 {
+				log.Printf("Invalid routing key format: %s", msg.RoutingKey)
+				return
+			}
+
+			tagTypeId, err := strconv.Atoi(routingKeyParts[2])
+			if err != nil {
+				log.Printf("Failed to parse tagTypeId from routing key: %s", err)
+				return
+			}
+
+			tagset := routingKeyParts[3]
+
+			// Get the information from the message body
+			var message map[string]string
+			err = json.Unmarshal(msg.Body, &message)
+			if err != nil {
+				log.Printf("Failed to parse message body: %v", err)
+				return
+			}
+
+			mediaId, ok := message["mediaID"]
+			if !ok {
+				log.Printf("Missing mediaID in message body")
+				return
+			}
+
+			tag, ok := message["taggingValue"]
+			if !ok {
+				log.Printf("Missing taggingValue in message body")
+				return
+			}
+
+			log.Printf("Parsed message: mediaID=%s, taggingValue=%s, tagset=%s", mediaId, tag, tagset)
+
+			// Get/Create the tagset ID from the database
+			response, err := server.CreateTagSet(context.Background(), &pb.CreateTagSetRequest{
+				Name:      tagset,
+				TagTypeId: int64(tagTypeId),
+			})
+			if err != nil {
+				log.Printf("Failed to create tagset: %s", err)
+				return
+			}
+			if response.ErrorMessage != "" {
+				log.Printf("Error creating tagset: %s", response.ErrorMessage)
+				return
+			}
+			tagsetId := response.Tagset.GetId()
+
+			// Get the tag ID from the database
+			queryString := `SELECT
+					t.id
+				FROM
+					public.tags t
+				LEFT JOIN
+					public.alphanumerical_tags ant ON t.id = ant.id
+				LEFT JOIN
+					public.timestamp_tags tst ON t.id = tst.id
+				LEFT JOIN
+					public.time_tags tt ON t.id = tt.id
+				LEFT JOIN
+					public.date_tags dt ON t.id = dt.id
+				LEFT JOIN
+					public.numerical_tags nt ON t.id = nt.id
+				WHERE
+					COALESCE(ant.name, tst.name::text, tt.name::text, dt.name::text, nt.name::text) = $1
+					AND t.tagset_id = $2`
+
+			row := server.db.QueryRow(queryString, tag, tagsetId)
+			var tagId int64
+			err = row.Scan(&tagId)
+			if err != nil && err != sql.ErrNoRows {
+				log.Printf("Failed to fetch tag ID from database: %s", err)
+				return
+			}
+			if err == sql.ErrNoRows {
+				queryString = "INSERT INTO public.tags (tagtype_id, tagset_id) VALUES ($1, $2) RETURNING id"
+				row = server.db.QueryRow(queryString, tagTypeId, tagsetId)
+				err = row.Scan(&tagId)
+				if err != nil {
+					log.Printf("Failed to insert tag into database: %s", err)
+					return
+				}
+
+				queryString = "INSERT INTO public."
+				switch tagTypeId {
+				case 1:
+					queryString += "alphanumerical_tags"
+				case 2:
+					queryString += "timestamp_tags"
+				case 3:
+					queryString += "time_tags"
+				case 4:
+					queryString += "date_tags"
+				case 5:
+					queryString += "numerical_tags"
+				default:
+					log.Print("Error: incorrect tag type was provided.")
+					return
+				}
+				queryString += " (id, name, tagset_id) VALUES ($1, $2, $3);"
+				row = server.db.QueryRow(queryString, tagId, tag, tagsetId)
+				err = row.Scan()
+				if err != nil && err != sql.ErrNoRows {
+					log.Printf("Failed to create tag: %s", err)
+					return
+				}
+
+			}
+
+			queryString = "INSERT INTO public.taggings (object_id, tag_id) VALUES ($1, $2) ON CONFLICT (object_id, tag_id) DO NOTHING;"
+			row = server.db.QueryRow(queryString, mediaId, tagId)
+
+			err = row.Scan()
+			if err != nil && err != sql.ErrNoRows {
+				log.Printf("Failed to insert tagging into database: %s", err)
+				return
+			}
+		})
+	}()
 
 	// Create a TCP listener for the gRPC server
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", sv_host, sv_port))
