@@ -78,12 +78,18 @@ services:
       - media-downloader
       - go-server
       - rabbitmq
-  
+
   time-info:
     container_name: plugin-time-info
     build:
       context: ./go-server
       dockerfile: ./plugins/time_info/Dockerfile
+
+  location-info:
+    container_name: plugin-location-info
+    build:
+      context: ./go-server
+      dockerfile: ./plugins/location_info/Dockerfile
 
 volumes:
   downloaded-medias:
