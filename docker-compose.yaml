@@ -129,7 +129,12 @@ services:
       - medias:/app/medias
       - downloaded-medias:/app/downloaded-medias
       - known_faces:/app/known_faces
-     
+
+  date-hierarchy-builder:
+    container_name: plugin-date-hierarchy-builder
+    build:
+      context: ./go-server
+      dockerfile: ./plugins/date_hierarchy_builder/Dockerfile   
 
 volumes:
   downloaded-medias:
