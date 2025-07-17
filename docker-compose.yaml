@@ -107,6 +107,18 @@ services:
       - go-server
       - rabbitmq
 
+  classifier:
+    container_name: plugin-classifier
+    build:
+      context: ./go-server
+      dockerfile: ./plugins/classifier/Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - medias:/app/medias
+      - downloaded-medias:/app/downloaded-medias
+     
+
 volumes:
   downloaded-medias:
     driver: local
