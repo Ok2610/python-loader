@@ -117,6 +117,18 @@ services:
     volumes:
       - medias:/app/medias
       - downloaded-medias:/app/downloaded-medias
+    
+  face-recognition:
+    container_name: plugin-face-recognition
+    build:
+      context: ./go-server
+      dockerfile: ./plugins/face_recognition/Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - medias:/app/medias
+      - downloaded-medias:/app/downloaded-medias
+      - known_faces:/app/known_faces
      
 
 volumes:
@@ -130,4 +142,6 @@ volumes:
       type: none
       o: bind
       device: ./medias
+  known_faces:
+    driver: local
     
