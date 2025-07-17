@@ -54,7 +54,19 @@ services:
     depends_on:
       - db
       - go-server
+
+  media-downloader:
+    container_name: media-downloader
+    build: ./go-server/media_downloader
+    ports:
+      - "50052:50052"
+    volumes:
+      - medias:/app/medias
+      - downloaded-medias:/app/downloaded-medias
+
   
 volumes:
+  downloaded-medias:
+    driver: local
   db:
     driver: local
