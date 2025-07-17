@@ -28,9 +28,9 @@ const (
 	dbname     = "loader-testing"
 	user       = "postgres"
 	pwd        = "root"
-	db_host    = "localhost"
+	db_host    = "db"
 	db_port    = 5432
-	sv_host    = "localhost"
+	sv_host    = "0.0.0.0"
 	sv_port    = 50051
 	BATCH_SIZE = 5000
 )

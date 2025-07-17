@@ -16,9 +16,7 @@ from filemgmt.json_hr import JSONHandler
 from filemgmt.csv import CSVHandler
 from filemgmt.json_fast import FastJSONHandler
 
-client = LoaderClient(grpc_host='localhost', grpc_port='50051')
-
-SERVER_ADDRESS = "localhost:50051"
+client = LoaderClient(grpc_host='go-server', grpc_port='50051')
 
 @click.group()
 def cli():

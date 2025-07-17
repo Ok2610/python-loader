@@ -1,19 +1,22 @@
-version: '3.8'
 services:
   db:
+    container_name: db
     image: postgres:14.1-alpine
     restart: always
     environment:
+      - POSTGRES_DB=loader-testing
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=root
     ports:
       - "5432:5432"
     volumes:
       - db:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
-  server:
-    container_name: python-server
-    build: ./server
+      - ./ddl.sql:/docker-entrypoint-initdb.d/create_tables.sql
+      - ./list_taggings.sql:/docker-entrypoint-initdb.d/list_taggings.sql
+
+  go-server:
+    container_name: go-server
+    build: ./go-server
     ports:
       - "50051:50051"
     environment:
@@ -21,25 +24,36 @@ services:
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASSWORD: postgres
-      DB_NAME: postgres
+      DB_NAME: loader-testing
     links:
      - db
-    volumes:
-      - ./server:/app
     restart: always
     depends_on:
-      - db
+      - rabbitmq
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.8.9-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: 
+      RABBITMQ_DEFAULT_PASS:
+      
   client:
     container_name: python-client
     build: ./client
     ports:
       - "8080:8080"
     volumes:
-      - ./client:/app
-    restart: always
+      #- ./client:/app
+      - medias:/app/medias
+    restart: on-failure
     depends_on:
       - db
-      - server
+      - go-server
   
 volumes:
   db:
