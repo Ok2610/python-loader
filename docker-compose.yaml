@@ -64,9 +64,30 @@ services:
       - medias:/app/medias
       - downloaded-medias:/app/downloaded-medias
 
+  exif-extractor:
+    container_name: plugin-exif-extractor
+    build:
+      context: ./go-server
+      dockerfile: ./plugins/exif_extractor/Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - medias:/app/medias
+      - downloaded-medias:/app/downloaded-medias
+    depends_on:
+      - media-downloader
+      - go-server
+      - rabbitmq
   
 volumes:
   downloaded-medias:
     driver: local
   db:
     driver: local
+  medias:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./medias
+    
