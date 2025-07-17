@@ -91,6 +91,22 @@ services:
       context: ./go-server
       dockerfile: ./plugins/location_info/Dockerfile
 
+  captioning:
+    container_name: plugin-captioning
+    build:
+      context: ./go-server
+      dockerfile: ./plugins/captioning/Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./model_cache:/root/.cache
+      - medias:/app/medias
+      - downloaded-medias:/app/downloaded-medias
+    depends_on:
+      - media-downloader
+      - go-server
+      - rabbitmq
+
 volumes:
   downloaded-medias:
     driver: local
