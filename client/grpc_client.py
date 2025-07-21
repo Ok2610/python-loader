@@ -5,7 +5,7 @@ import dataloader_pb2 as rpc_objects
 import dataloader_pb2_grpc
 
 class LoaderClient:
-    def __init__(self, grpc_host='localhost', grpc_port='50051') -> None:
+    def __init__(self, grpc_host='go-server', grpc_port='50051') -> None:
         self.grpc_channel = grpc.insecure_channel(f'{grpc_host}:{grpc_port}')
         self.grpc_stub = dataloader_pb2_grpc.DataLoaderStub(self.grpc_channel)
 
