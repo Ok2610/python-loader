@@ -3,6 +3,7 @@ import glob
 import pika
 import json
 import os
+from threading import Thread
 
 import media_downloader_pb2
 import media_downloader_pb2_grpc
@@ -42,7 +43,14 @@ def main():
     # Connect to rabbitMQ
     channel, connection = rabbitMQ_helpers.producer_connection_init()
 
-    rabbitMQ_helpers.listen('media.1', callback)
+    tagging_updates_thread = Thread(target=rabbitMQ_helpers.listen, args=('tag_update.faces', tag_update_callback))
+    tagging_updates_thread.start()
+
+    media_thread = Thread(target=rabbitMQ_helpers.listen, args=('media.1', callback))
+    media_thread.start()
+    
+    tagging_updates_thread.join()
+    media_thread.join()
 
     rabbitMQ_helpers.connection_end(connection, channel)
 
@@ -139,6 +147,27 @@ def callback(ch, method, properties, body):
             
     print("Finished processing the message")
     return
+
+def tag_update_callback(ch, method, properties, body):
+    """
+    Callback function to handle tag update messages.
+    """
+    
+    data = json.loads(body)
+    old_name = data['OldName']
+    new_name = data['NewName']
+    
+    print(f"Received tag update: {old_name} -> {new_name}")
+    
+    if old_name in known_faces_encodings:
+        known_faces_encodings[new_name] = known_faces_encodings.pop(old_name)
+        old_path = os.path.join(known_face_dir, old_name + '.jpg')
+        new_path = os.path.join(known_face_dir, new_name + '.jpg')
+        if os.path.exists(old_path):
+            os.rename(old_path, new_path)
+        print(f"Renamed face {old_name} to {new_name}")
+    else:
+        print(f"Face {old_name} not found in known faces")
 
 if __name__ == "__main__":
     main()
