@@ -240,6 +240,48 @@ class LoaderClient:
         request = rpc_objects.IdRequest(id=tag_id)
         response = self.grpc_stub.getTag(request)
         return response
+    
+    def change_tag_name(self, tag_id: int, tag_type_id: int, tag_set_id: int, new_value):
+        if tag_type_id == 1:
+            req = rpc_objects.ChangeTagNameRequest(
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                tagSetId=tag_set_id,
+                newAlphanumerical=rpc_objects.AlphanumericalValue(value=new_value)
+            )
+        elif tag_type_id == 2:
+            req = rpc_objects.ChangeTagNameRequest(
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                tagSetId=tag_set_id,
+                newTimestamp=rpc_objects.TimeStampValue(value=new_value)
+            )
+        elif tag_type_id == 3:
+            req = rpc_objects.ChangeTagNameRequest(
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                tagSetId=tag_set_id,
+                newTime=rpc_objects.TimeValue(value=new_value)
+            )
+        elif tag_type_id == 4:
+            req = rpc_objects.ChangeTagNameRequest(
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                tagSetId=tag_set_id,
+                newDate=rpc_objects.DateValue(value=new_value)
+            )
+        elif tag_type_id == 5:
+            req = rpc_objects.ChangeTagNameRequest(
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                tagSetId=tag_set_id,
+                newNumerical=rpc_objects.NumericalValue(value=int(new_value))
+            )
+        else:
+            raise ValueError("Invalid tagTypeId. Must be 1-5.")
+
+        response = self.grpc_stub.changeTagName(req)
+        return response
 
     #!================ Tagging functions ======================================================================
     def get_taggings(self):
@@ -273,6 +315,53 @@ class LoaderClient:
         request = rpc_objects.IdRequest(id=id)
         response = self.grpc_stub.getMediaTags(request)
         return response.ids
+    
+    def change_tagging(self, media_id: int, tag_set_id: int, tag_id: int, tag_type_id: int, new_value):
+        if tag_type_id == 1:
+            req = rpc_objects.ChangeTaggingRequest(
+                mediaId=media_id,
+                tagSetId=tag_set_id,
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                alphanumerical=rpc_objects.AlphanumericalValue(value=new_value)
+            )
+        elif tag_type_id == 2:
+            req = rpc_objects.ChangeTaggingRequest(
+                mediaId=media_id,
+                tagSetId=tag_set_id,
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                timestamp=rpc_objects.TimeStampValue(value=new_value)
+            )
+        elif tag_type_id == 3:
+            req = rpc_objects.ChangeTaggingRequest(
+                mediaId=media_id,
+                tagSetId=tag_set_id,
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                time=rpc_objects.TimeValue(value=new_value)
+            )
+        elif tag_type_id == 4:
+            req = rpc_objects.ChangeTaggingRequest(
+                mediaId=media_id,
+                tagSetId=tag_set_id,
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                date=rpc_objects.DateValue(value=new_value)
+            )
+        elif tag_type_id == 5:
+            req = rpc_objects.ChangeTaggingRequest(
+                mediaId=media_id,
+                tagSetId=tag_set_id,
+                tagId=tag_id,
+                tagTypeId=tag_type_id,
+                numerical=rpc_objects.NumericalValue(value=int(new_value))
+            )
+        else:
+            raise ValueError("Invalid tagTypeId. Must be 1-5.")
+
+        response = self.grpc_stub.changeTagging(req)
+        return response
 
 #!================ Hierarchy functions ====================================================================
 
