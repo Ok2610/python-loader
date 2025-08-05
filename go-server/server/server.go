@@ -1176,10 +1176,20 @@ func (s *DataLoaderServer) CreateTaggingStream(stream pb.DataLoader_CreateTaggin
 }
 
 func (s *DataLoaderServer) ChangeTagging(ctx context.Context, request *pb.ChangeTaggingRequest) (*pb.Empty, error) {
+	query := "SELECT 1 FROM public.taggings WHERE object_id = $1 AND tag_id = $2"
+	var tmp int
+	err := s.db.QueryRow(query, request.MediaId, request.TagId).Scan(&tmp)
+	if err == sql.ErrNoRows {
+		return nil, status.Errorf(codes.InvalidArgument, "Tagging with media ID %d and tag ID %d does not exist", request.MediaId, request.TagId)
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to fetch tagging from database: %s", err)
+	}
+
 	var tagRequest *pb.CreateTagRequest
 
 	var oldName string
-	query := "SELECT name FROM public."
+	query = "SELECT name FROM public."
 	switch request.TagTypeId {
 	case 1:
 		query += "alphanumerical_tags WHERE id = $1"
@@ -1194,7 +1204,7 @@ func (s *DataLoaderServer) ChangeTagging(ctx context.Context, request *pb.Change
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid tag type provided: range is 1-5")
 	}
-	err := s.db.QueryRow(query, request.TagId).Scan(&oldName)
+	err = s.db.QueryRow(query, request.TagId).Scan(&oldName)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to fetch old tag name: %s", err)
 	}
