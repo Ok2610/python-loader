@@ -24,16 +24,36 @@ import (
 	rmq "m3.dataloader/rabbitMQ"
 )
 
-const (
-	dbname     = "loader-testing"
-	user       = "postgres"
-	pwd        = "root"
-	db_host    = "db"
-	db_port    = 5432
-	sv_host    = "0.0.0.0"
-	sv_port    = 50051
-	BATCH_SIZE = 5000
+var (
+	dbname     = mustGetEnv("DB_NAME")
+	user       = mustGetEnv("DB_USER")
+	pwd        = mustGetEnv("DB_PASSWORD")
+	db_host    = mustGetEnv("DB_HOST")
+	db_port    = mustGetEnvInt("DB_PORT")
+	sv_host    = mustGetEnv("SV_HOST")
+	sv_port    = mustGetEnvInt("SV_PORT")
+	BATCH_SIZE = mustGetEnvInt("BATCH_SIZE")
 )
+
+func mustGetEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("Environment variable %s is required but not set", key)
+	}
+	return value
+}
+
+func mustGetEnvInt(key string) int {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("Environment variable %s is required but not set", key)
+	}
+	v, err := strconv.Atoi(value)
+	if err != nil {
+		log.Fatalf("Environment variable %s must be an integer, got: %s", key, value)
+	}
+	return v
+}
 
 var (
 	prod *rmq.Producer

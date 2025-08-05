@@ -5,7 +5,13 @@ import dataloader_pb2 as rpc_objects
 import dataloader_pb2_grpc
 
 class LoaderClient:
-    def __init__(self, grpc_host='go-server', grpc_port='50051') -> None:
+    def __init__(self) -> None:
+        grpc_host = os.getenv('GRPC_HOST')
+        if not grpc_host:
+            raise EnvironmentError("GRPC_HOST environment variable is not set.")
+        grpc_port = os.getenv('GRPC_PORT')
+        if not grpc_port:
+            raise EnvironmentError("GRPC_PORT environment variable is not set.")
         self.grpc_channel = grpc.insecure_channel(f'{grpc_host}:{grpc_port}')
         self.grpc_stub = dataloader_pb2_grpc.DataLoaderStub(self.grpc_channel)
 

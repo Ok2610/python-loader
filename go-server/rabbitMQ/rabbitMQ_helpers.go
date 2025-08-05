@@ -2,15 +2,42 @@ package rabbitMQ
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const (
-	exchangeName = "topic_logs"
+var (
+	rabbitMQHost = mustGetEnv("RABBITMQ_HOST")
+	rabbitMQPort = mustGetEnvInt("RABBITMQ_PORT")
+	rabbitMQUser = mustGetEnv("RABBITMQ_USER")
+	rabbitMQPass = mustGetEnv("RABBITMQ_PASS")
+	exchangeName = mustGetEnv("RABBITMQ_EXCHANGE_NAME")
 )
+
+func mustGetEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("Environment variable %s is required but not set", key)
+	}
+	return value
+}
+
+func mustGetEnvInt(key string) int {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("Environment variable %s is required but not set", key)
+	}
+	v, err := strconv.Atoi(value)
+	if err != nil {
+		log.Fatalf("Environment variable %s must be an integer, got: %s", key, value)
+	}
+	return v
+}
 
 type Producer struct {
 	conn    *amqp.Connection
@@ -26,7 +53,7 @@ func failOnError(err error, msg string) {
 }
 
 func ProducerConnexionInit() *Producer {
-	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", rabbitMQUser, rabbitMQPass, rabbitMQHost, rabbitMQPort))
 	failOnError(err, "Failed to connect to RabbitMQ")
 
 	ch, err := conn.Channel()
@@ -75,7 +102,7 @@ func (p *Producer) ConnexionEnd() {
 }
 
 func Listen(topic string, consumeAction func(amqp.Delivery)) {
-	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", rabbitMQUser, rabbitMQPass, rabbitMQHost, rabbitMQPort))
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 

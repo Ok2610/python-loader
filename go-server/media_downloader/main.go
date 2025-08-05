@@ -9,6 +9,7 @@ import (
 	pb "media_downloader/gen/go"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -27,15 +28,16 @@ const (
 	available   ressourceState = 2
 
 	downloadedPath = "/app/downloaded-medias/"
-	ressourceTTL   = 10 * time.Second
 )
 
 var (
-	port          = flag.Int("port", 50052, "The server port")
+	grpcHost      = mustGetEnv("GRPC_HOST")
+	grpcPort      = mustGetEnvInt("GRPC_PORT")
 	ressources    = make(map[string]*ressourceEntry)
 	c             = sync.NewCond(&sync.Mutex{})
 	cacheSize     int64
-	cacheSizeMax  = flag.Int64("cache_size_max", 1000000000, "Maximum size of the cache in bytes")
+	maxCacheSize  = mustGetEnvInt64("MAX_CACHE_SIZE")
+	ressourceTTL  = time.Duration(mustGetEnvInt64("RESSOURCE_TTL")) * time.Second
 	cacheElements = list.New()
 )
 
@@ -46,6 +48,38 @@ type ressourceEntry struct {
 	timer          *time.Timer
 	size           int64
 	elem           *list.Element
+}
+
+func mustGetEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("Environment variable %s is required but not set", key)
+	}
+	return value
+}
+
+func mustGetEnvInt(key string) int {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("Environment variable %s is required but not set", key)
+	}
+	v, err := strconv.Atoi(value)
+	if err != nil {
+		log.Fatalf("Environment variable %s must be an integer, got: %s", key, value)
+	}
+	return v
+}
+
+func mustGetEnvInt64(key string) int64 {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("Environment variable %s is required but not set", key)
+	}
+	v, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		log.Fatalf("Environment variable %s must be an integer, got: %s", key, value)
+	}
+	return v
 }
 
 func (res *ressourceEntry) addRequest() {
@@ -98,13 +132,13 @@ func (s *server) RequestMedia(ctx context.Context, req *pb.RequestMediaRequest) 
 		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "remote request failed")
 		}
-		if resp.Size > *cacheSizeMax {
-			return nil, status.Errorf(codes.ResourceExhausted, "requested media is too large (%d bytes), maximum allowed size is %d bytes", resp.Size, *cacheSizeMax)
+		if resp.Size > maxCacheSize {
+			return nil, status.Errorf(codes.ResourceExhausted, "requested media is too large (%d bytes), maximum allowed size is %d bytes", resp.Size, maxCacheSize)
 		}
 		entry.path = resp.Filename
 		entry.size = resp.Size
 		cacheSize += entry.size
-		for cacheSize > *cacheSizeMax {
+		for cacheSize > maxCacheSize {
 			oldest := cacheElements.Front()
 			if oldest == nil {
 				return nil, status.Errorf(codes.ResourceExhausted, "cache size exceeded and no elements to remove")
@@ -160,7 +194,7 @@ func destroyRessource(URI string) {
 
 func main() {
 	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", grpcHost, grpcPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

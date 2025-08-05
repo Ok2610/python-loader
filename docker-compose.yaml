@@ -1,4 +1,4 @@
-services:
+services: 
   db:
     container_name: db
     image: postgres:14.1-alpine
@@ -20,11 +20,14 @@ services:
     ports:
       - "50051:50051"
     environment:
+      DB_NAME: loader-testing
+      DB_USER: postgres
+      DB_PASSWORD: root
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: loader-testing
+      SV_HOST: 0.0.0.0
+      SV_PORT: 50051
+      BATCH_SIZE: 5000
     links:
      - db
     restart: always
@@ -39,38 +42,51 @@ services:
       - "15672:15672"
     restart: always
     environment:
-      RABBITMQ_DEFAULT_USER: 
-      RABBITMQ_DEFAULT_PASS:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_NODE_PORT: 5672
       
   client:
     container_name: python-client
     build: ./client
     ports:
       - "8080:8080"
+    environment:
+      SV_HOST: go-server
+      SV_PORT: 50051
     volumes:
       #- ./client:/app
       - medias:/app/medias
-    restart: on-failure
+    restart: always
     depends_on:
       - db
       - go-server
 
   media-downloader:
     container_name: media-downloader
+    profiles: ["medias"]
     build: ./go-server/media_downloader
     ports:
       - "50052:50052"
+    env_file:
+      - "rabbitMQ/rabbitMQ.env"
+      - "media_downloader/media_downloader.env"
+    environment:
+      - MAX_CACHE_SIZE=1000
+      - RESSOURCE_TTL=5
     volumes:
       - medias:/app/medias
       - downloaded-medias:/app/downloaded-medias
 
   exif-extractor:
     container_name: plugin-exif-extractor
+    profiles: ["plugins"]
     build:
       context: ./go-server
       dockerfile: ./plugins/exif_extractor/Dockerfile
-    environment:
-      - PYTHONUNBUFFERED=1
+    env_file:
+      - "rabbitMQ/rabbitMQ.env"
+      - "media_downloader/media_downloader.env"
     volumes:
       - medias:/app/medias
       - downloaded-medias:/app/downloaded-medias
@@ -81,23 +97,31 @@ services:
 
   time-info:
     container_name: plugin-time-info
+    profiles: ["plugins"]
     build:
       context: ./go-server
       dockerfile: ./plugins/time_info/Dockerfile
+    env_file:
+      - "rabbitMQ/rabbitMQ.env"
 
   location-info:
     container_name: plugin-location-info
+    profiles: ["plugins"]
     build:
       context: ./go-server
       dockerfile: ./plugins/location_info/Dockerfile
+    env_file:
+      - "rabbitMQ/rabbitMQ.env"
 
   captioning:
     container_name: plugin-captioning
+    profiles: ["plugins"]
     build:
       context: ./go-server
       dockerfile: ./plugins/captioning/Dockerfile
-    environment:
-      - PYTHONUNBUFFERED=1
+    env_file:
+      - "rabbitMQ/rabbitMQ.env"
+      - "media_downloader/media_downloader.env"
     volumes:
       - ./model_cache:/root/.cache
       - medias:/app/medias
@@ -109,22 +133,26 @@ services:
 
   classifier:
     container_name: plugin-classifier
+    profiles: ["plugins"]
     build:
       context: ./go-server
       dockerfile: ./plugins/classifier/Dockerfile
-    environment:
-      - PYTHONUNBUFFERED=1
+    env_file:
+      - "rabbitMQ/rabbitMQ.env"
+      - "media_downloader/media_downloader.env"
     volumes:
       - medias:/app/medias
       - downloaded-medias:/app/downloaded-medias
     
   face-recognition:
     container_name: plugin-face-recognition
+    profiles: ["plugins"]
     build:
       context: ./go-server
       dockerfile: ./plugins/face_recognition/Dockerfile
-    environment:
-      - PYTHONUNBUFFERED=1
+    env_file:
+      - "rabbitMQ/rabbitMQ.env"
+      - "media_downloader/media_downloader.env"
     volumes:
       - medias:/app/medias
       - downloaded-medias:/app/downloaded-medias
@@ -132,9 +160,12 @@ services:
 
   date-hierarchy-builder:
     container_name: plugin-date-hierarchy-builder
+    profiles: ["plugins"]
     build:
       context: ./go-server
-      dockerfile: ./plugins/date_hierarchy_builder/Dockerfile   
+      dockerfile: ./plugins/date_hierarchy_builder/Dockerfile
+    env_file:
+      - "rabbitMQ/rabbitMQ.env"  
 
 volumes:
   downloaded-medias:
@@ -150,3 +181,4 @@ volumes:
   known_faces:
     driver: local
     
+  
