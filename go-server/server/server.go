@@ -14,6 +14,10 @@ import (
 
 	"google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
+
+	"google.golang.org/grpc/health"
+	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	status "google.golang.org/grpc/status"
 
 	_ "github.com/lib/pq"
@@ -1910,9 +1914,12 @@ func main() {
 
 	// Create and register the implementation of the gRPC server
 	grpc_server := grpc.NewServer()
+	healthcheck := health.NewServer()
+	healthgrpc.RegisterHealthServer(grpc_server, healthcheck)
 	pb.RegisterDataLoaderServer(grpc_server, server)
 	log.Println("gRPC server listening on port 50051")
 	if err := grpc_server.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+	healthcheck.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 }

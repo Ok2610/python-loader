@@ -15,6 +15,9 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 
 	"github.com/cavaliercoder/grab"
@@ -31,8 +34,8 @@ const (
 )
 
 var (
-	grpcHost      = mustGetEnv("GRPC_HOST")
-	grpcPort      = mustGetEnvInt("GRPC_PORT")
+	grpcHost      = mustGetEnv("MEDIA_DOWNLOADER_HOST")
+	grpcPort      = mustGetEnvInt("MEDIA_DOWNLOADER_PORT")
 	ressources    = make(map[string]*ressourceEntry)
 	c             = sync.NewCond(&sync.Mutex{})
 	cacheSize     int64
@@ -199,9 +202,12 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
+	healthcheck := health.NewServer()
+	healthgrpc.RegisterHealthServer(s, healthcheck)
 	pb.RegisterMediaDownloaderServer(s, &server{})
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+	healthcheck.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 }
