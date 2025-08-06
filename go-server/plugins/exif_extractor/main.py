@@ -43,8 +43,12 @@ def callback(ch, method, properties, body):
     media_response = media_downloader_stub.RequestMedia(
         media_downloader_pb2.RequestMediaRequest(media_uri=media_URI)
     )
-
-    image = Image(open(media_response.media_path, 'rb').read())
+    try:
+        image = Image(open(media_response.media_path, 'rb').read())
+    except Exception as e:
+        print(f"Error reading image {media_URI}: {e}")
+        return
+        
     if image.has_exif:  
         if 'datetime' in image.list_all():
             exif_datetime = image.datetime
