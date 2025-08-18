@@ -223,7 +223,7 @@ func (s *DataLoaderServer) CreateMedia(ctx context.Context, request *pb.Media) (
 	return &insertedMedia, nil
 }
 
-func (s *DataLoaderServer) CreateMedias(stream pb.DataLoader_CreateMediaStreamServer) error {
+func (s *DataLoaderServer) CreateMediaStream(stream pb.DataLoader_CreateMediaStreamServer) error {
 	requestCounter, dataCounter := 0, 1
 	var queryString string
 	var data []interface{}
@@ -253,8 +253,8 @@ func (s *DataLoaderServer) CreateMedias(stream pb.DataLoader_CreateMediaStreamSe
 
 		if requestCounter%BATCH_SIZE == 0 {
 			dataCounter = 1
-			queryString = queryString[:len(queryString)-1] + ";"
-			_, err := s.db.Exec(queryString, data...)
+			queryString = queryString[:len(queryString)-1] + "RETURNING *;"
+			res, err := s.db.Query(queryString, data...)
 			if err != nil {
 				log.Printf("Error: %s", err)
 				err = stream.Send(&pb.CreateMediaStreamResponse{
@@ -275,12 +275,25 @@ func (s *DataLoaderServer) CreateMedias(stream pb.DataLoader_CreateMediaStreamSe
 					return fmt.Errorf("failed to send response: %w", err)
 				}
 			}
+			for res.Next() {
+				var insertedMedia pb.Media
+				if err := res.Scan(&insertedMedia.Id, &insertedMedia.FileUri, &insertedMedia.FileType, &insertedMedia.ThumbnailUri); err != nil {
+					log.Printf("Error scanning row: %s", err)
+					continue
+				}
+				body := fmt.Sprintf(`{
+					"ID": "%d",
+					"MediaURI": "%s",
+					"ThumbnailURI": "%s"
+				}`, insertedMedia.Id, insertedMedia.FileUri, insertedMedia.ThumbnailUri)
+				rmq.PublishMessage(prod, body, fmt.Sprintf("media.%d", insertedMedia.FileType))
+			}
 		}
 	}
 
 	if requestCounter%BATCH_SIZE > 0 {
-		queryString = queryString[:len(queryString)-1] + ";"
-		_, err := s.db.Exec(queryString, data...)
+		queryString = queryString[:len(queryString)-1] + "RETURNING *;"
+		res, err := s.db.Query(queryString, data...)
 		if err != nil {
 			log.Printf("Error: %s", err)
 			err = stream.Send(&pb.CreateMediaStreamResponse{
@@ -300,6 +313,19 @@ func (s *DataLoaderServer) CreateMedias(stream pb.DataLoader_CreateMediaStreamSe
 			if err != nil {
 				return fmt.Errorf("failed to send response: %w", err)
 			}
+		}
+		for res.Next() {
+			var insertedMedia pb.Media
+			if err := res.Scan(&insertedMedia.Id, &insertedMedia.FileUri, &insertedMedia.FileType, &insertedMedia.ThumbnailUri); err != nil {
+				log.Printf("Error scanning row: %s", err)
+				continue
+			}
+			body := fmt.Sprintf(`{
+				"ID": "%d",
+				"MediaURI": "%s",
+				"ThumbnailURI": "%s"
+			}`, insertedMedia.Id, insertedMedia.FileUri, insertedMedia.ThumbnailUri)
+			rmq.PublishMessage(prod, body, fmt.Sprintf("media.%d", insertedMedia.FileType))
 		}
 	}
 	return nil
