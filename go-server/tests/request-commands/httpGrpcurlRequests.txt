@@ -1,0 +1,16 @@
+grpcurl -plaintext \
+  -d '{}' \
+  localhost:50051 \
+  dataloader.DataLoader/getTagSets
+
+
+grpcurl -plaintext \
+  -d '{"tagTypeId": 1}' \
+  localhost:50051 \
+  dataloader.DataLoader/getTagSets
+
+  grpcurl -plaintext \
+  -d '{"parentNodeId": 1}' \
+  localhost:50051 \
+  dataloader.DataLoader/getNodes
+

@@ -7,10 +7,15 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
+
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 
@@ -20,14 +25,15 @@ import (
 )
 
 const (
-	dbname     = "loader-testing"
-	user       = "postgres"
-	pwd        = "root"
-	db_host    = "localhost"
+	dbname     = "m3"
+	user       = "thisismyuser15"
+	pwd        = "thisismypass15"
+	db_host    = "host.docker.internal"
 	db_port    = 5432
 	sv_host    = "localhost"
 	sv_port    = 50051
 	BATCH_SIZE = 5000
+	http_port  = 8080
 )
 
 type DataLoaderServer struct {
@@ -181,7 +187,7 @@ func (s *DataLoaderServer) CreateMedia(ctx context.Context, request *pb.CreateMe
 	}, nil
 }
 
-func (s *DataLoaderServer) CreateMedias(stream pb.DataLoader_CreateMediasServer) error {
+func (s *DataLoaderServer) CreateMedias(stream pb.DataLoader_CreateMediaStreamServer) error {
 	requestCounter, dataCounter := 0, 1
 	var queryString string
 	var data []interface{}
@@ -1119,6 +1125,7 @@ func (s *DataLoaderServer) GetNode(ctx context.Context, request *pb.IdRequest) (
 		Node: &node,
 	}, nil
 }
+
 func (s *DataLoaderServer) GetNodes(request *pb.GetNodesRequest, stream pb.DataLoader_GetNodesServer) error {
 	queryString := "SELECT * FROM public.nodes"
 	rowcount := 0
@@ -1171,6 +1178,34 @@ func (s *DataLoaderServer) GetNodes(request *pb.GetNodesRequest, stream pb.DataL
 	}
 	return nil
 }
+
+func (s *DataLoaderServer) GetChildNodes(request *pb.IdRequest, stream pb.DataLoader_GetChildNodesServer) error {
+	queryString := "select n.id, a_t.name, null as parentnode from nodes n left join alphanumerical_tags a_t on n.tag_id = a_t.id where parentnode_id = $1"
+	rows, err := s.db.Query(queryString, request.Id)
+	if err != nil {
+		return fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var node pb.ChildNodeResponse
+		if err := rows.Scan(&node.Id, &node.Name, &node.ParentNode); err != nil {
+			return fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		response := &node
+		if err := stream.Send(response); err != nil {
+			return fmt.Errorf("failed to send response: %w", err)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("row iteration error: %w", err)
+	}
+
+	return nil
+}
+
 func (s *DataLoaderServer) CreateNode(ctx context.Context, request *pb.CreateNodeRequest) (*pb.NodeResponse, error) {
 	// If we are trying to add a rootnode, the operations are a bit different
 	// First, check if node already exists
@@ -1255,23 +1290,58 @@ func main() {
 		db_host, // host
 		db_port) // port
 
-	server, err := NewDataLoaderServer(conn_str)
+	grpcAddr := sv_host + ":" + strconv.Itoa(sv_port)
+	serverImpl, err := NewDataLoaderServer(conn_str)
 	if err != nil {
-		log.Fatalf("Error creating server: %v", err)
+		log.Fatalf("failed to create DataLoaderServer: %v", err)
 	}
-	defer server.Close()
+	defer serverImpl.Close()
 
-	// Create a TCP listener for the gRPC server
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", sv_host, sv_port))
+	lis, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatalf("failed to listen on %s: %v", grpcAddr, err)
+	}
+	grpcSrv := grpc.NewServer()
+	pb.RegisterDataLoaderServer(grpcSrv, serverImpl)
+	reflection.Register(grpcSrv)
+	go func() {
+		log.Printf("gRPC server listening on %s", grpcAddr)
+		if err := grpcSrv.Serve(lis); err != nil {
+			log.Fatalf("gRPC serve error: %v", err)
+		}
+	}()
+
+	// 2) Dial the gRPC server to get a client stub
+	grpcConn, err := grpc.Dial(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("failed to dial gRPC server: %v", err)
+	}
+	defer grpcConn.Close()
+	client := pb.NewDataLoaderClient(grpcConn)
+
+	// 3) Build the generated grpc-gateway mux for all other endpoints
+	gwMux := runtime.NewServeMux()
+	if err := pb.RegisterDataLoaderHandlerFromEndpoint(context.Background(), gwMux, grpcAddr,
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+	); err != nil {
+		log.Fatalf("failed to register HTTP gateway: %v", err)
 	}
 
-	// Create and register the implementation of the gRPC server
-	grpc_server := grpc.NewServer()
-	pb.RegisterDataLoaderServer(grpc_server, server)
-	log.Println("gRPC server listening on port 50051")
-	if err := grpc_server.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+	// 4) Create an http.ServeMux that overrides /tagsets
+	httpMux := http.NewServeMux()
+
+	// Custom handlers for specific endpoints
+	httpMux.HandleFunc("/tagset", GetTagsetsHandler(client))
+	httpMux.HandleFunc("/node/{parentId}/children", GetChildNodesHandler(client))
+	httpMux.HandleFunc("/cell", GetCellHandler(client))
+
+	// 5) Fallback to the generated gateway for everything else
+	httpMux.Handle("/", gwMux)
+
+	// 6) Start HTTP server
+	addr := fmt.Sprintf(":%d", http_port)
+	log.Printf("REST gateway listening on %s", addr)
+	if err := http.ListenAndServe(addr, httpMux); err != nil {
+		log.Fatalf("HTTP serve error: %v", err)
 	}
 }

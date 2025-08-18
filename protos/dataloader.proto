@@ -3,6 +3,8 @@ syntax = "proto3";
 package dataloader;
 option go_package = "m3.dataloader/dataloader";
 
+import "google/api/annotations.proto";
+
 service DataLoader {
   // -------------------------- Medias
   rpc getMedias (GetMediasRequest) returns (stream MediaResponse) {}  // Get all the medias stored in DB, with optional type filter
@@ -14,8 +16,16 @@ service DataLoader {
   rpc deleteMedia (IdRequest) returns (StatusResponse) {}             // Delete a single media with the given ID
 
 	// -------------------------- TagSets
-	rpc getTagSets(GetTagSetsRequest) returns (stream TagSetResponse) {}; // Get all the tagsets stored in DB, with optional tagtype filter
-	rpc getTagSetById(IdRequest) returns (TagSetResponse) {};             // Get a single tagset with the given ID
+	rpc getTagSets(GetTagSetsRequest) returns (stream TagSetResponse) {
+    option (google.api.http) = {
+      get: "/tagset"
+    };
+  }; // Get all the tagsets stored in DB, with optional tagtype filter
+	rpc getTagSetById(IdRequest) returns (TagSetResponse) {
+    option (google.api.http) = {
+      get: "/tagset/{id}"
+    };
+  };             // Get a single tagset with the given ID
 	rpc getTagSetByName(GetTagSetRequestByName) returns (TagSetResponse) {};  // Get a single tagset with the given name
 	rpc createTagSet(CreateTagSetRequest) returns (TagSetResponse) {};    // Create tagset or get tagset if already existent
 
@@ -43,12 +53,24 @@ service DataLoader {
                                                                                     // or get it if already existent
   
   // -------------------------- Nodes
-  rpc getNodes (GetNodesRequest) returns (stream NodeResponse) {};  // Get all the nodes stored in DB, with optional hierarchy, tag or parent node filters
-  rpc getNode (IdRequest) returns (NodeResponse) {};                // Get a single node with the given ID
+  rpc getNodes (GetNodesRequest) returns (stream NodeResponse) {};    // Get all the nodes stored in DB, with optional hierarchy, tag or parent node filters
+  rpc getNode (IdRequest) returns (NodeResponse) {};                  // Get a single node with the given ID
+  rpc getChildNodes (IdRequest) returns (stream ChildNodeResponse) {  // Get all child nodes of a given node ID
+    option (google.api.http) = {
+      get: "/node/{id}/children"
+    }; 
+  };
   rpc createNode (CreateNodeRequest) returns (NodeResponse) {};     // Create or get a single node
   rpc createNodeStream (stream CreateNodeRequest) returns (stream NodeResponse) {};    // NOT IMPLEMENTED
   rpc deleteNode (IdRequest) returns (StatusResponse) {}            // Delete a single node with the given ID
   
+// -------------------------- Cell
+  rpc getCell (GetCellRequest) returns (stream CellResponse) {
+    option (google.api.http) = {
+      get: "/cell"
+    };
+  };    // Get a cell
+
   // Other
 	rpc resetDatabase (EmptyRequest) returns (StatusResponse) {};
     // Reads and executes the DDL, which does 2 things: drop the schemas, and recreate all the tables and rules
@@ -256,7 +278,6 @@ message HierarchyResponse {
   string error_message = 2;
 }
 
-
 // Nodes
 message Node {
   int64 id = 1;
@@ -280,4 +301,34 @@ message GetNodesRequest {
 message NodeResponse {
   Node node = 1;
 	string error_message = 2;
+}
+
+message ChildNodeResponse {
+  int32 id = 1;
+  string name = 2; // Name of the node
+  ChildNodeResponse parentNode = 3; // Parent of the node, if any
+}
+
+// Cell
+message GetCellRequest {
+  string xAxis = 1;
+  string yAxis = 2;
+  string zAxis = 3;
+  string filters = 4;
+  string all = 5;
+  string timeline = 6;
+}
+
+message CellResponse {
+  int32 x = 1;
+  int32 y = 2;
+  int32 z = 3;
+  int32 count = 4; // The value of the cell, e.g. the
+  repeated CubeObject cubeObjects = 5;
+}
+
+message CubeObject {
+  int32 id = 1;
+  string fileUri = 2;
+  string thumbnailUri = 3;
 }

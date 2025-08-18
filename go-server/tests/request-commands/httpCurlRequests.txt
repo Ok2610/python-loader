@@ -1,0 +1,4 @@
+curl "http://localhost:8080/cell" -H "Accept: application/json"
+curl "http://localhost:8080/tagset" -H "Accept: application/json"
+curl "http://localhost:8080/tagset?tagTypeId=1" -H "Accept: application/json"
+curl "http://localhost:8080/node/1/children" -H "Accept: application/json"
