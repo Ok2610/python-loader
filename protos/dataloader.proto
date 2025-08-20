@@ -212,15 +212,14 @@ message CreateTagStreamResponse {
 }
 
 message ChangeTagNameRequest {
-  int64 tagId = 1;
-  int64 tagTypeId = 2;
-  int64 tagSetId = 3;
+  string tagName = 1;
+  string tagsetName = 2;
   oneof newName {
-    AlphanumericalValue newAlphanumerical = 4;
-    TimeStampValue newTimestamp = 5;
-    TimeValue newTime = 6;
-    DateValue newDate = 7;
-    NumericalValue newNumerical = 8;
+    AlphanumericalValue newAlphanumerical = 3;
+    TimeStampValue newTimestamp = 4;
+    TimeValue newTime = 5;
+    DateValue newDate = 6;
+    NumericalValue newNumerical = 7;
   }
 }
 
@@ -251,16 +250,15 @@ message CreateTaggingStreamResponse {
 }
 
 message ChangeTaggingRequest {
-  int64 mediaId = 1;
-  int64 tagSetId = 2;
-  int64 tagId = 3;
-  int64 tagTypeId = 4;
+  string mediaURI = 1;
+  string tagsetName = 2;
+  string tagName = 3;
   oneof newName {
-    AlphanumericalValue alphanumerical = 5;
-    TimeStampValue timestamp = 6;
-    TimeValue time = 7;
-    DateValue date = 8;
-    NumericalValue numerical = 9;
+    AlphanumericalValue alphanumerical = 4;
+    TimeStampValue timestamp = 5;
+    TimeValue time = 6;
+    DateValue date = 7;
+    NumericalValue numerical = 8;
   }
 }
 

@@ -906,72 +906,79 @@ func (s *DataLoaderServer) ChangeTagName(ctx context.Context, request *pb.Change
 		return nil, status.Errorf(codes.InvalidArgument, "Request cannot be nil")
 	}
 
-	// Retrieve the old tag name and tagset name before updating
-	var oldName string
-	query := "SELECT name FROM public."
-	switch request.TagTypeId {
-	case 1:
-		query += "alphanumerical_tags WHERE id = $1"
-	case 2:
-		query += "timestamp_tags WHERE id = $1"
-	case 3:
-		query += "time_tags WHERE id = $1"
-	case 4:
-		query += "date_tags WHERE id = $1"
-	case 5:
-		query += "numerical_tags WHERE id = $1"
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "Invalid tag type provided: range is 1-5")
-	}
-	err := s.db.QueryRow(query, request.TagId).Scan(&oldName)
+	// Get tagset id and tagtype id from tagset name
+	var tagsetId, tagtypeId int64
+	err := s.db.QueryRow("SELECT id, tagtype_id FROM public.tagsets WHERE name = $1", request.TagsetName).Scan(&tagsetId, &tagtypeId)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to fetch old tag name: %s", err)
-	}
-	var tagsetName string
-	err = s.db.QueryRow("SELECT name FROM public.tagsets WHERE id = $1", request.TagSetId).Scan(&tagsetName)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to fetch tagset name: %s", err)
+		return nil, status.Errorf(codes.Internal, "Failed to retrieve tagset from database: %s", err)
 	}
 
-	// Build the query
+	// Get tag id from tag name, depending on tagtype
+	var tagId int64
+	switch tagtypeId {
+	case 1:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.alphanumerical_tags ant ON t.id = ant.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND ant.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+	case 2:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.timestamp_tags tst ON t.id = tst.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND tst.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+	case 3:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.time_tags tt ON t.id = tt.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND tt.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+	case 4:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.date_tags dt ON t.id = dt.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND dt.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+	case 5:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.numerical_tags nt ON t.id = nt.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND nt.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to retrieve tag from database: %s", err)
+	}
+
 	queryString := "UPDATE public."
 	var body string
-	switch request.TagTypeId {
+	switch tagtypeId {
 	case 1:
 		queryString += "alphanumerical_tags SET name = $1 WHERE id = $2"
-		_, err = s.db.Exec(queryString, request.GetNewAlphanumerical().Value, request.TagId)
+		_, err = s.db.Exec(queryString, request.GetNewAlphanumerical().Value, tagId)
 		body = fmt.Sprintf(`{
 			"OldName": "%s",
 			"NewName": "%s"
-			}`, oldName, request.GetNewAlphanumerical().Value)
+			}`, request.TagName, request.GetNewAlphanumerical().Value)
 	case 2:
 		queryString += "timestamp_tags SET name = $1 WHERE id = $2"
-		_, err = s.db.Exec(queryString, request.GetNewTimestamp().Value, request.TagId)
+		_, err = s.db.Exec(queryString, request.GetNewTimestamp().Value, tagId)
 		body = fmt.Sprintf(`{
 			"OldName": "%s",
 			"NewName": "%s"
-			}`, oldName, request.GetNewTimestamp().Value)
+			}`, request.TagName, request.GetNewTimestamp().Value)
 	case 3:
 		queryString += "time_tags SET name = $1 WHERE id = $2"
-		_, err = s.db.Exec(queryString, request.GetNewTime().Value, request.TagId)
+		_, err = s.db.Exec(queryString, request.GetNewTime().Value, tagId)
 		body = fmt.Sprintf(`{
 			"OldName": "%s",
 			"NewName": "%s"
-			}`, oldName, request.GetNewTime().Value)
+			}`, request.TagName, request.GetNewTime().Value)
 	case 4:
 		queryString += "date_tags SET name = $1 WHERE id = $2"
-		_, err = s.db.Exec(queryString, request.GetNewDate().Value, request.TagId)
+		_, err = s.db.Exec(queryString, request.GetNewDate().Value, tagId)
 		body = fmt.Sprintf(`{
 			"OldName": "%s",
 			"NewName": "%s"
-			}`, oldName, request.GetNewDate().Value)
+			}`, request.TagName, request.GetNewDate().Value)
 	case 5:
 		queryString += "numerical_tags SET name = $1 WHERE id = $2"
-		_, err = s.db.Exec(queryString, request.GetNewNumerical().Value, request.TagId)
+		_, err = s.db.Exec(queryString, request.GetNewNumerical().Value, tagId)
 		body = fmt.Sprintf(`{
 			"OldName": "%s",
 			"NewName": "%d"
-			}`, oldName, request.GetNewNumerical().Value)
+			}`, request.TagName, request.GetNewNumerical().Value)
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid tag type provided: range is 1-5")
 	}
@@ -979,7 +986,7 @@ func (s *DataLoaderServer) ChangeTagName(ctx context.Context, request *pb.Change
 		return nil, status.Errorf(codes.Internal, "Failed to update tag in database: %s", err)
 	}
 
-	rmq.PublishMessage(prod, body, fmt.Sprintf("tag_update.%s", tagsetName))
+	rmq.PublishMessage(prod, body, fmt.Sprintf("tag_update.%s", request.TagsetName))
 
 	return &pb.Empty{}, nil
 }
@@ -1226,114 +1233,103 @@ func (s *DataLoaderServer) CreateTaggingStream(stream pb.DataLoader_CreateTaggin
 }
 
 func (s *DataLoaderServer) ChangeTagging(ctx context.Context, request *pb.ChangeTaggingRequest) (*pb.Empty, error) {
+
+	var mediaId int64
+	err := s.db.QueryRow("SELECT id FROM public.medias WHERE file_uri = $1", request.MediaURI).Scan(&mediaId)
+	if err != nil {
+	if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("no media found with URI %s", request.MediaURI)
+	}
+		return nil, fmt.Errorf("failed to fetch media ID from database: %w", err)
+	}
+
+	// Get tagset id and tagtype id from tagset name
+	var tagsetId, tagtypeId int64
+	err = s.db.QueryRow("SELECT id, tagtype_id FROM public.tagsets WHERE name = $1", request.TagsetName).Scan(&tagsetId, &tagtypeId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to retrieve tagset from database: %s", err)
+	}
+	var tagRequest *pb.CreateTagRequest
+
+	var tagId int64
+	switch tagtypeId {
+	case 1:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.alphanumerical_tags ant ON t.id = ant.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND ant.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+		tagRequest = &pb.CreateTagRequest{
+			TagTypeId: int64(tagtypeId),
+			TagSetId:  tagsetId,
+			Value:     &pb.CreateTagRequest_Alphanumerical{Alphanumerical: &pb.AlphanumericalValue{Value: request.GetAlphanumerical().GetValue()}},
+		}
+	case 2:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.timestamp_tags tst ON t.id = tst.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND tst.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+		tagRequest = &pb.CreateTagRequest{
+			TagTypeId: int64(tagtypeId),
+			TagSetId:  tagsetId,
+			Value:     &pb.CreateTagRequest_Timestamp{Timestamp: &pb.TimeStampValue{Value: request.GetTimestamp().GetValue()}},
+		}
+	case 3:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.time_tags tt ON t.id = tt.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND tt.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+		tagRequest = &pb.CreateTagRequest{
+			TagTypeId: int64(tagtypeId),
+			TagSetId:  tagsetId,
+			Value:     &pb.CreateTagRequest_Time{Time: &pb.TimeValue{Value: request.GetTime().GetValue()}},
+		}
+	case 4:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.date_tags dt ON t.id = dt.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND dt.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+		tagRequest = &pb.CreateTagRequest{
+			TagTypeId: int64(tagtypeId),
+			TagSetId:  tagsetId,
+			Value:     &pb.CreateTagRequest_Date{Date: &pb.DateValue{Value: request.GetDate().GetValue()}},
+		}
+	case 5:
+		err = s.db.QueryRow(
+			"SELECT t.id FROM public.tags t JOIN public.numerical_tags nt ON t.id = nt.id WHERE t.tagset_id = $1 AND t.tagtype_id = $2 AND nt.name = $3",
+			tagsetId, tagtypeId, request.TagName).Scan(&tagId)
+		tagRequest = &pb.CreateTagRequest{
+			TagTypeId: int64(tagtypeId),
+			TagSetId:  tagsetId,
+			Value:     &pb.CreateTagRequest_Numerical{Numerical: &pb.NumericalValue{Value: (int64(request.GetNumerical().GetValue()))}},
+		}
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to retrieve tag from database: %s", err)
+	}
 	query := "SELECT 1 FROM public.taggings WHERE object_id = $1 AND tag_id = $2"
 	var tmp int
-	err := s.db.QueryRow(query, request.MediaId, request.TagId).Scan(&tmp)
+	err = s.db.QueryRow(query, mediaId, tagId).Scan(&tmp)
 	if err == sql.ErrNoRows {
-		return nil, status.Errorf(codes.InvalidArgument, "Tagging with media ID %d and tag ID %d does not exist", request.MediaId, request.TagId)
+		return nil, status.Errorf(codes.InvalidArgument, "Tagging with media ID %d and tag ID %d does not exist", mediaId, tagId)
 	}
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to fetch tagging from database: %s", err)
 	}
 
-	var tagRequest *pb.CreateTagRequest
+	body := fmt.Sprintf(`{
+			"OldName": "%s",
+			"NewName": "%s",
+			"MediaId": "%d"
+			}`, request.TagName, request.NewName, mediaId)
 
-	var oldName string
-	query = "SELECT name FROM public."
-	switch request.TagTypeId {
-	case 1:
-		query += "alphanumerical_tags WHERE id = $1"
-	case 2:
-		query += "timestamp_tags WHERE id = $1"
-	case 3:
-		query += "time_tags WHERE id = $1"
-	case 4:
-		query += "date_tags WHERE id = $1"
-	case 5:
-		query += "numerical_tags WHERE id = $1"
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "Invalid tag type provided: range is 1-5")
-	}
-	err = s.db.QueryRow(query, request.TagId).Scan(&oldName)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to fetch old tag name: %s", err)
-	}
-	var tagsetName string
-	err = s.db.QueryRow("SELECT name FROM public.tagsets WHERE id = $1", request.TagSetId).Scan(&tagsetName)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to fetch tagset name: %s", err)
-	}
-
-	var body string
-	switch request.TagTypeId {
-	case 1:
-		tagRequest = &pb.CreateTagRequest{
-			TagTypeId: int64(request.TagTypeId),
-			TagSetId:  request.TagSetId,
-			Value:     &pb.CreateTagRequest_Alphanumerical{Alphanumerical: &pb.AlphanumericalValue{Value: request.GetAlphanumerical().GetValue()}},
-		}
-		body = fmt.Sprintf(`{
-			"OldName": "%s",
-			"NewName": "%s",
-			"MediaId": "%d"
-			}`, oldName, request.GetAlphanumerical().Value, request.MediaId)
-	case 2:
-		tagRequest = &pb.CreateTagRequest{
-			TagTypeId: int64(request.TagTypeId),
-			TagSetId:  request.TagSetId,
-			Value:     &pb.CreateTagRequest_Timestamp{Timestamp: &pb.TimeStampValue{Value: request.GetTimestamp().GetValue()}},
-		}
-		body = fmt.Sprintf(`{
-			"OldName": "%s",
-			"NewName": "%s",
-			"MediaId": "%d"
-			}`, oldName, request.GetTimestamp().Value, request.MediaId)
-	case 3:
-		tagRequest = &pb.CreateTagRequest{
-			TagTypeId: int64(request.TagTypeId),
-			TagSetId:  request.TagSetId,
-			Value:     &pb.CreateTagRequest_Time{Time: &pb.TimeValue{Value: request.GetTime().GetValue()}},
-		}
-		body = fmt.Sprintf(`{
-			"OldName": "%s",
-			"NewName": "%s",
-			"MediaId": "%d"
-			}`, oldName, request.GetTime().Value, request.MediaId)
-	case 4:
-		tagRequest = &pb.CreateTagRequest{
-			TagTypeId: int64(request.TagTypeId),
-			TagSetId:  request.TagSetId,
-			Value:     &pb.CreateTagRequest_Date{Date: &pb.DateValue{Value: request.GetDate().GetValue()}},
-		}
-		body = fmt.Sprintf(`{
-			"OldName": "%s",
-			"NewName": "%s",
-			"MediaId": "%d"
-			}`, oldName, request.GetDate().Value, request.MediaId)
-	case 5:
-		tagRequest = &pb.CreateTagRequest{
-			TagTypeId: int64(request.TagTypeId),
-			TagSetId:  request.TagSetId,
-			Value:     &pb.CreateTagRequest_Numerical{Numerical: &pb.NumericalValue{Value: (int64(request.GetNumerical().GetValue()))}},
-		}
-		body = fmt.Sprintf(`{
-			"OldName": "%s",
-			"NewName": "%d",
-			"MediaId": "%d"
-			}`, oldName, request.GetNumerical().Value, request.MediaId)
-	}
 	tag, err := s.CreateTag(context.Background(), tagRequest)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to create tag: %s", err)
 	}
 	// Update the tagging in the database
 	queryString := "UPDATE public.taggings SET tag_id = $1 WHERE tag_id = $2 AND object_id = $3"
-	_, err = s.db.Exec(queryString, tag.Id, request.TagId, request.MediaId)
+	_, err = s.db.Exec(queryString, tag.Id, tagId, mediaId)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to update tagging in database: %s", err)
 	}
 
-	rmq.PublishMessage(prod, body, fmt.Sprintf("tagging_update.%s", tagsetName))
+	rmq.PublishMessage(prod, body, fmt.Sprintf("tagging_update.%s", request.TagsetName))
 
 	return &pb.Empty{}, nil
 }

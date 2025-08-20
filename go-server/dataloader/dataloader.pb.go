@@ -1658,10 +1658,9 @@ func (x *CreateTagStreamResponse) GetErrorMessage() string {
 }
 
 type ChangeTagNameRequest struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	TagId     int64                  `protobuf:"varint,1,opt,name=tagId,proto3" json:"tagId,omitempty"`
-	TagTypeId int64                  `protobuf:"varint,2,opt,name=tagTypeId,proto3" json:"tagTypeId,omitempty"`
-	TagSetId  int64                  `protobuf:"varint,3,opt,name=tagSetId,proto3" json:"tagSetId,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	TagName    string                 `protobuf:"bytes,1,opt,name=tagName,proto3" json:"tagName,omitempty"`
+	TagsetName string                 `protobuf:"bytes,2,opt,name=tagsetName,proto3" json:"tagsetName,omitempty"`
 	// Types that are valid to be assigned to NewName:
 	//
 	//	*ChangeTagNameRequest_NewAlphanumerical
@@ -1704,25 +1703,18 @@ func (*ChangeTagNameRequest) Descriptor() ([]byte, []int) {
 	return file_dataloader_proto_rawDescGZIP(), []int{25}
 }
 
-func (x *ChangeTagNameRequest) GetTagId() int64 {
+func (x *ChangeTagNameRequest) GetTagName() string {
 	if x != nil {
-		return x.TagId
+		return x.TagName
 	}
-	return 0
+	return ""
 }
 
-func (x *ChangeTagNameRequest) GetTagTypeId() int64 {
+func (x *ChangeTagNameRequest) GetTagsetName() string {
 	if x != nil {
-		return x.TagTypeId
+		return x.TagsetName
 	}
-	return 0
-}
-
-func (x *ChangeTagNameRequest) GetTagSetId() int64 {
-	if x != nil {
-		return x.TagSetId
-	}
-	return 0
+	return ""
 }
 
 func (x *ChangeTagNameRequest) GetNewName() isChangeTagNameRequest_NewName {
@@ -1782,23 +1774,23 @@ type isChangeTagNameRequest_NewName interface {
 }
 
 type ChangeTagNameRequest_NewAlphanumerical struct {
-	NewAlphanumerical *AlphanumericalValue `protobuf:"bytes,4,opt,name=newAlphanumerical,proto3,oneof"`
+	NewAlphanumerical *AlphanumericalValue `protobuf:"bytes,3,opt,name=newAlphanumerical,proto3,oneof"`
 }
 
 type ChangeTagNameRequest_NewTimestamp struct {
-	NewTimestamp *TimeStampValue `protobuf:"bytes,5,opt,name=newTimestamp,proto3,oneof"`
+	NewTimestamp *TimeStampValue `protobuf:"bytes,4,opt,name=newTimestamp,proto3,oneof"`
 }
 
 type ChangeTagNameRequest_NewTime struct {
-	NewTime *TimeValue `protobuf:"bytes,6,opt,name=newTime,proto3,oneof"`
+	NewTime *TimeValue `protobuf:"bytes,5,opt,name=newTime,proto3,oneof"`
 }
 
 type ChangeTagNameRequest_NewDate struct {
-	NewDate *DateValue `protobuf:"bytes,7,opt,name=newDate,proto3,oneof"`
+	NewDate *DateValue `protobuf:"bytes,6,opt,name=newDate,proto3,oneof"`
 }
 
 type ChangeTagNameRequest_NewNumerical struct {
-	NewNumerical *NumericalValue `protobuf:"bytes,8,opt,name=newNumerical,proto3,oneof"`
+	NewNumerical *NumericalValue `protobuf:"bytes,7,opt,name=newNumerical,proto3,oneof"`
 }
 
 func (*ChangeTagNameRequest_NewAlphanumerical) isChangeTagNameRequest_NewName() {}
@@ -2080,11 +2072,10 @@ func (*CreateTaggingStreamResponse_Count) isCreateTaggingStreamResponse_Message(
 func (*CreateTaggingStreamResponse_Error) isCreateTaggingStreamResponse_Message() {}
 
 type ChangeTaggingRequest struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	MediaId   int64                  `protobuf:"varint,1,opt,name=mediaId,proto3" json:"mediaId,omitempty"`
-	TagSetId  int64                  `protobuf:"varint,2,opt,name=tagSetId,proto3" json:"tagSetId,omitempty"`
-	TagId     int64                  `protobuf:"varint,3,opt,name=tagId,proto3" json:"tagId,omitempty"`
-	TagTypeId int64                  `protobuf:"varint,4,opt,name=tagTypeId,proto3" json:"tagTypeId,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	MediaURI   string                 `protobuf:"bytes,1,opt,name=mediaURI,proto3" json:"mediaURI,omitempty"`
+	TagsetName string                 `protobuf:"bytes,2,opt,name=tagsetName,proto3" json:"tagsetName,omitempty"`
+	TagName    string                 `protobuf:"bytes,3,opt,name=tagName,proto3" json:"tagName,omitempty"`
 	// Types that are valid to be assigned to NewName:
 	//
 	//	*ChangeTaggingRequest_Alphanumerical
@@ -2127,32 +2118,25 @@ func (*ChangeTaggingRequest) Descriptor() ([]byte, []int) {
 	return file_dataloader_proto_rawDescGZIP(), []int{30}
 }
 
-func (x *ChangeTaggingRequest) GetMediaId() int64 {
+func (x *ChangeTaggingRequest) GetMediaURI() string {
 	if x != nil {
-		return x.MediaId
+		return x.MediaURI
 	}
-	return 0
+	return ""
 }
 
-func (x *ChangeTaggingRequest) GetTagSetId() int64 {
+func (x *ChangeTaggingRequest) GetTagsetName() string {
 	if x != nil {
-		return x.TagSetId
+		return x.TagsetName
 	}
-	return 0
+	return ""
 }
 
-func (x *ChangeTaggingRequest) GetTagId() int64 {
+func (x *ChangeTaggingRequest) GetTagName() string {
 	if x != nil {
-		return x.TagId
+		return x.TagName
 	}
-	return 0
-}
-
-func (x *ChangeTaggingRequest) GetTagTypeId() int64 {
-	if x != nil {
-		return x.TagTypeId
-	}
-	return 0
+	return ""
 }
 
 func (x *ChangeTaggingRequest) GetNewName() isChangeTaggingRequest_NewName {
@@ -2212,23 +2196,23 @@ type isChangeTaggingRequest_NewName interface {
 }
 
 type ChangeTaggingRequest_Alphanumerical struct {
-	Alphanumerical *AlphanumericalValue `protobuf:"bytes,5,opt,name=alphanumerical,proto3,oneof"`
+	Alphanumerical *AlphanumericalValue `protobuf:"bytes,4,opt,name=alphanumerical,proto3,oneof"`
 }
 
 type ChangeTaggingRequest_Timestamp struct {
-	Timestamp *TimeStampValue `protobuf:"bytes,6,opt,name=timestamp,proto3,oneof"`
+	Timestamp *TimeStampValue `protobuf:"bytes,5,opt,name=timestamp,proto3,oneof"`
 }
 
 type ChangeTaggingRequest_Time struct {
-	Time *TimeValue `protobuf:"bytes,7,opt,name=time,proto3,oneof"`
+	Time *TimeValue `protobuf:"bytes,6,opt,name=time,proto3,oneof"`
 }
 
 type ChangeTaggingRequest_Date struct {
-	Date *DateValue `protobuf:"bytes,8,opt,name=date,proto3,oneof"`
+	Date *DateValue `protobuf:"bytes,7,opt,name=date,proto3,oneof"`
 }
 
 type ChangeTaggingRequest_Numerical struct {
-	Numerical *NumericalValue `protobuf:"bytes,9,opt,name=numerical,proto3,oneof"`
+	Numerical *NumericalValue `protobuf:"bytes,8,opt,name=numerical,proto3,oneof"`
 }
 
 func (*ChangeTaggingRequest_Alphanumerical) isChangeTaggingRequest_NewName() {}
@@ -2857,16 +2841,17 @@ const file_dataloader_proto_rawDesc = "" +
 	"\n" +
 	"IdMapEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x03R\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"\xac\x03\n" +
-	"\x14ChangeTagNameRequest\x12\x14\n" +
-	"\x05tagId\x18\x01 \x01(\x03R\x05tagId\x12\x1c\n" +
-	"\ttagTypeId\x18\x02 \x01(\x03R\ttagTypeId\x12\x1a\n" +
-	"\btagSetId\x18\x03 \x01(\x03R\btagSetId\x12O\n" +
-	"\x11newAlphanumerical\x18\x04 \x01(\v2\x1f.dataloader.AlphanumericalValueH\x00R\x11newAlphanumerical\x12@\n" +
-	"\fnewTimestamp\x18\x05 \x01(\v2\x1a.dataloader.TimeStampValueH\x00R\fnewTimestamp\x121\n" +
-	"\anewTime\x18\x06 \x01(\v2\x15.dataloader.TimeValueH\x00R\anewTime\x121\n" +
-	"\anewDate\x18\a \x01(\v2\x15.dataloader.DateValueH\x00R\anewDate\x12@\n" +
-	"\fnewNumerical\x18\b \x01(\v2\x1a.dataloader.NumericalValueH\x00R\fnewNumericalB\t\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"\x96\x03\n" +
+	"\x14ChangeTagNameRequest\x12\x18\n" +
+	"\atagName\x18\x01 \x01(\tR\atagName\x12\x1e\n" +
+	"\n" +
+	"tagsetName\x18\x02 \x01(\tR\n" +
+	"tagsetName\x12O\n" +
+	"\x11newAlphanumerical\x18\x03 \x01(\v2\x1f.dataloader.AlphanumericalValueH\x00R\x11newAlphanumerical\x12@\n" +
+	"\fnewTimestamp\x18\x04 \x01(\v2\x1a.dataloader.TimeStampValueH\x00R\fnewTimestamp\x121\n" +
+	"\anewTime\x18\x05 \x01(\v2\x15.dataloader.TimeValueH\x00R\anewTime\x121\n" +
+	"\anewDate\x18\x06 \x01(\v2\x15.dataloader.DateValueH\x00R\anewDate\x12@\n" +
+	"\fnewNumerical\x18\a \x01(\v2\x1a.dataloader.NumericalValueH\x00R\fnewNumericalB\t\n" +
 	"\anewName\"9\n" +
 	"\aTagging\x12\x18\n" +
 	"\amediaId\x18\x01 \x01(\x03R\amediaId\x12\x14\n" +
@@ -2881,17 +2866,18 @@ const file_dataloader_proto_rawDesc = "" +
 	"\x1bCreateTaggingStreamResponse\x12\x16\n" +
 	"\x05count\x18\x01 \x01(\x03H\x00R\x05count\x12*\n" +
 	"\x05error\x18\x02 \x01(\v2\x12.google.rpc.StatusH\x00R\x05errorB\t\n" +
-	"\amessage\"\xa8\x03\n" +
-	"\x14ChangeTaggingRequest\x12\x18\n" +
-	"\amediaId\x18\x01 \x01(\x03R\amediaId\x12\x1a\n" +
-	"\btagSetId\x18\x02 \x01(\x03R\btagSetId\x12\x14\n" +
-	"\x05tagId\x18\x03 \x01(\x03R\x05tagId\x12\x1c\n" +
-	"\ttagTypeId\x18\x04 \x01(\x03R\ttagTypeId\x12I\n" +
-	"\x0ealphanumerical\x18\x05 \x01(\v2\x1f.dataloader.AlphanumericalValueH\x00R\x0ealphanumerical\x12:\n" +
-	"\ttimestamp\x18\x06 \x01(\v2\x1a.dataloader.TimeStampValueH\x00R\ttimestamp\x12+\n" +
-	"\x04time\x18\a \x01(\v2\x15.dataloader.TimeValueH\x00R\x04time\x12+\n" +
-	"\x04date\x18\b \x01(\v2\x15.dataloader.DateValueH\x00R\x04date\x12:\n" +
-	"\tnumerical\x18\t \x01(\v2\x1a.dataloader.NumericalValueH\x00R\tnumericalB\t\n" +
+	"\amessage\"\x94\x03\n" +
+	"\x14ChangeTaggingRequest\x12\x1a\n" +
+	"\bmediaURI\x18\x01 \x01(\tR\bmediaURI\x12\x1e\n" +
+	"\n" +
+	"tagsetName\x18\x02 \x01(\tR\n" +
+	"tagsetName\x12\x18\n" +
+	"\atagName\x18\x03 \x01(\tR\atagName\x12I\n" +
+	"\x0ealphanumerical\x18\x04 \x01(\v2\x1f.dataloader.AlphanumericalValueH\x00R\x0ealphanumerical\x12:\n" +
+	"\ttimestamp\x18\x05 \x01(\v2\x1a.dataloader.TimeStampValueH\x00R\ttimestamp\x12+\n" +
+	"\x04time\x18\x06 \x01(\v2\x15.dataloader.TimeValueH\x00R\x04time\x12+\n" +
+	"\x04date\x18\a \x01(\v2\x15.dataloader.DateValueH\x00R\x04date\x12:\n" +
+	"\tnumerical\x18\b \x01(\v2\x1a.dataloader.NumericalValueH\x00R\tnumericalB\t\n" +
 	"\anewName\"k\n" +
 	"\tHierarchy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +

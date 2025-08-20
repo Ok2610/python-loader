@@ -420,27 +420,27 @@ def change():
     pass
 
 @change.command()
-@click.argument("tag_id", type=int)
+@click.argument("tag_name", type=str)
 @click.argument("tag_type_id", type=int)
-@click.argument("tag_set_id", type=int)
+@click.argument("tagset_name", type=str)
 @click.argument("new_value", type=str)
-def tag_name(tag_id, tag_type_id, tag_set_id, new_value):
+def tag_name(tag_name, tag_type_id, tagset_name, new_value):
     """Change the name of a tag with given ID, type and tagset. The new value must be provided."""
-    if tag_id <= 0:
-        click.echo("Error: tag_id must be > 0")
+    if not tag_name:
+        click.echo("Error: tag_name must be provided")
         return
     if tag_type_id not in range(1, 6):
         click.echo("Error: tag_type_id must be between 1 and 5")
         return
-    if tag_set_id <= 0:
-        click.echo("Error: tag_set_id must be > 0")
+    if not tagset_name:
+        click.echo("Error: tagset_name must be provided")
         return
     if not new_value:
-        click.echo("Error: new_value cannot be empty")
+        click.echo("Error: new_value must be provided")
         return
 
     try:
-        response = client.change_tag_name(tag_id, tag_type_id, tag_set_id, new_value)
+        response = client.change_tag_name(tag_name, tag_type_id, tagset_name, new_value)
     except Exception as e:
         click.echo("Error occurred: %s" % e)
         return
@@ -448,21 +448,21 @@ def tag_name(tag_id, tag_type_id, tag_set_id, new_value):
     click.echo("Tag name changed successfully")
     
 @change.command()
-@click.argument("media_id", type=int)
-@click.argument("tag_set_id", type=int)
-@click.argument("tag_id", type=int)
+@click.argument("media_uri", type=str)
+@click.argument("tag_set_name", type=str)
+@click.argument("tag_name", type=str)
 @click.argument("tag_type_id", type=int)
 @click.argument("new_value", type=str)
-def tagging(media_id, tag_set_id, tag_id, tag_type_id, new_value):
+def tagging(media_uri, tag_set_name, tag_name, tag_type_id, new_value):
     """Change the tagging of a media with given ID, tagset ID, tag ID and type. The new value must be provided."""
-    if media_id <= 0:
-        click.echo("Error: media_id must be > 0")
+    if not media_uri:
+        click.echo("Error: media_uri must be provided")
         return
-    if tag_set_id <= 0:
-        click.echo("Error: tag_set_id must be > 0")
+    if not tag_set_name:
+        click.echo("Error: tag_set_name must be provided")
         return
-    if tag_id <= 0:
-        click.echo("Error: tag_id must be > 0")
+    if not tag_name:
+        click.echo("Error: tag_name must be provided")
         return
     if tag_type_id not in range(1, 6):
         click.echo("Error: tag_type_id must be between 1 and 5")
@@ -472,7 +472,7 @@ def tagging(media_id, tag_set_id, tag_id, tag_type_id, new_value):
         return
 
     try:
-        response = client.change_tagging(media_id, tag_set_id, tag_id, tag_type_id, new_value)
+        response = client.change_tagging(media_uri, tag_set_name, tag_name, tag_type_id, new_value)
     except Exception as e:
         click.echo("Error occurred: %s" % e)
         return
